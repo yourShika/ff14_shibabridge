@@ -1,8 +1,9 @@
 {
-  "Author": "",
+  "Author": "yourShika",
   "Name": "ShibaBridge",
   "Description": "",
-  "Punchline": "",
-  "RepoUrl": "",
-  "DalamudApiLevel": 9
+  "Tags": ["ffxiv","dalamud","glamour","sync"],
+  "RepoUrl": "https://github.com/KamilBura/ff14_shibabridge",
+  "DalamudApiLevel": 9,
+  "AssemblyVersion": "0.1.0"
 }
