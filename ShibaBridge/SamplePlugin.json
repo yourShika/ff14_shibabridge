@@ -1,0 +1,10 @@
+{
+  "Author": "yourShika",
+  "Name": "ShibaBridge",
+  "Punchline": "A short one-liner that shows up in /xlplugins.",
+  "Description": "A description that shows up in /xlplugins. List any major slash-command(s).",
+  "RepoUrl": "https://github.com/KamilBura/ff14_shibabridge",
+  "IconUrl": "https://raw.githubusercontent.com/KamilBura/ff14_shibabridge/main/ShibaBridge/shibridge_icon_512.png",
+  "ApplicableVersion": "any",
+  "Tags": ["ffxiv","dalamud","glamour","sync"]
+}
