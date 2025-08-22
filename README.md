@@ -103,7 +103,7 @@
   "DownloadLinkInstall": "https://github.com/USER/REPO/releases/download/v0.1.0/ShibaBridge.zip",
   "DownloadLinkTesting": "",
   "DownloadLinkUpdate": "https://github.com/USER/REPO/releases/download/v0.1.0/ShibaBridge.zip",
-  "IconUrl": "https://raw.githubusercontent.com/USER/REPO/branch/assets/icon.png",
+  "IconUrl": "https://raw.githubusercontent.com/USER/REPO/branch/ShibaBridge/shibridge_icon_512.png",
   "ImageUrls": [ "https://raw.githubusercontent.com/USER/REPO/branch/assets/screen1.png" ]
 }
 </code></pre>
