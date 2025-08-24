@@ -54,11 +54,11 @@ public sealed class RemoteConfigurationService
         }
     }
 
-    private async Task DownloadConfig()
+    private Task DownloadConfig()
     {
         // Removed Lop's remote config code. Function exists purely to keep things clean.
         LoadConfig();
-        
+        return Task.CompletedTask;
     }
 
     private static bool VerifySignature(string message, ulong ts, string signature, string pubKey)
