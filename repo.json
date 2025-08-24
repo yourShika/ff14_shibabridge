@@ -1,0 +1,18 @@
+[
+  {
+    "Author": "Eauldane",
+    "Name": "ShibaBridge",
+    "InternalName": "ShibaBridge",
+    "AssemblyVersion": "0.1.7",
+    "Punchline": "Share your true self.",
+    "Description": "Synchronizes Penumbra mods and Glamourer states between paired players via the ShibaBridge server.",
+    "RepoUrl": "https://github.com/Eauldane/ShibaBridgeClient",
+    "DownloadLinkInstall": "https://example.com/ShibaBridge.zip",
+    "DownloadLinkTesting": "https://example.com/ShibaBridge.zip",
+    "DownloadLinkUpdate": "https://example.com/ShibaBridge.zip",
+    "IconUrl": "https://i.imgur.com/cMKeOjm.jpeg",
+    "ImageUrls": [],
+    "ApplicableVersion": "any",
+    "Changelog": "Initial skeleton for ShibaBridge plugin and server"
+  }
+]

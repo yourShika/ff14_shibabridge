@@ -233,3 +233,9 @@ cd REPO
 <p><strong>Links</strong><br />
 <a href="https://github.com/USER/REPO">Repository</a> •
 <a href="https://github.com/USER/REPO/releases">Releases</a></p>
+
+<hr />
+<h2 id="development">Development</h2>
+<p><strong>Build Plugin:</strong> <code>dotnet build ShibaBridge/ShibaBridge.csproj</code></p>
+<p><strong>Run Server:</strong> <code>cd Server/ShibaBridge.Server && dotnet run</code></p>
+<p><strong>Docker:</strong> <code>docker build -t shibabridge-server -f Server/Dockerfile .</code></p>
