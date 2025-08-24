@@ -1,0 +1,14 @@
+{
+  "Author": "Eauldane",
+  "Name": "Snowcloak",
+  "Punchline": "Share your true self.",
+  "Description": "This plugin will synchronize your Penumbra mods and current Glamourer state with other paired clients automatically.",
+  "InternalName": "Snowcloak",
+  "ApplicableVersion": "any",
+  "Tags": [
+    "customization"
+  ],
+  "IconUrl": "https://i.imgur.com/cMKeOjm.jpeg",
+  "RepoUrl": "https://github.com/Eauldane/SnowcloakClient",
+  "CanUnloadAsync": true
+}
