@@ -1,9 +1,14 @@
 using Microsoft.AspNetCore.RateLimiting;
 using ShibaBridge.Server.Hubs;
 using ShibaBridge.Server.Services;
+using ShibaBridge.API.SignalR;
 using System.Threading.RateLimiting;
+using Microsoft.Extensions.Logging;
 
 var builder = WebApplication.CreateBuilder(args);
+
+builder.Logging.AddSimpleConsole();
+builder.Logging.SetMinimumLevel(LogLevel.Debug);
 
 // Core services
 builder.Services.AddControllers();
@@ -40,7 +45,7 @@ if (app.Environment.IsDevelopment())
 
 app.UseRateLimiter();
 app.MapControllers();
-app.MapHub<SyncHub>("/sync");
+app.MapHub<SyncHub>(IShibaBridgeHub.Path);
 
 // Health endpoint used by admins or orchestrators
 app.MapGet("/health", () => Results.Ok(new { status = "ok" }));
