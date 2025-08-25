@@ -4,12 +4,17 @@
     <AssemblyName>ShibaBridge</AssemblyName>
     <Version>0.1.7</Version>
     <PackageProjectUrl>https://github.com/Eauldane/ShibaBridgeClient/</PackageProjectUrl>
+    <DalamudManifest>ShibaBridge.json</DalamudManifest>
   </PropertyGroup>
 
   <ItemGroup>
     <Compile Remove="PlayerData\Export\**" />
     <EmbeddedResource Remove="PlayerData\Export\**" />
     <None Remove="PlayerData\Export\**" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="ShibaBridge.json" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
 	<ItemGroup>
