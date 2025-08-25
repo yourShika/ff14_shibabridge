@@ -154,8 +154,8 @@
       },
       "MessagePack.Annotations": {
         "type": "Transitive",
-        "resolved": "2.5.198",
-        "contentHash": "3U9OvqQGTra+Mz1k1zfNAScSdNHobnqtQ51qdMGUZppkNDZJl0X/igq6Qz5zDBLEZoYqZrFtZwFx6wBJHHI8BA=="
+        "resolved": "2.5.187",
+        "contentHash": "/IvvMMS8opvlHjEJ/fR2Cal4Co726Kj77Z8KiohFhuHfLHHmb9uUxW5+tSCL4ToKFfkQlrS3HD638mRq83ySqA=="
       },
       "Microsoft.AspNetCore.Connections.Abstractions": {
         "type": "Transitive",
@@ -522,10 +522,10 @@
         "resolved": "9.0.8",
         "contentHash": "kpvkzWJoHR9os3/4LL5feaTTLD92+XzTqPyYLU2tw2BoJ4MrWCfkjGXtL7MsdpV/20e1+SamCbrPj2L9ptwgBA=="
       },
-      "shibabridgesynchronos.api": {
+      "shibabridge.api": {
         "type": "Project",
         "dependencies": {
-          "MessagePack.Annotations": "[2.5.198, )"
+          "MessagePack.Annotations": "[2.5.129, )"
         }
       }
     }

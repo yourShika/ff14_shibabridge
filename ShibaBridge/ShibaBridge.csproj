@@ -4,7 +4,6 @@
     <AssemblyName>ShibaBridge</AssemblyName>
     <Version>0.1.7</Version>
     <PackageProjectUrl>https://github.com/Eauldane/ShibaBridgeClient/</PackageProjectUrl>
-    <DalamudManifest>manifest.json</DalamudManifest>
   </PropertyGroup>
 
   <ItemGroup>
@@ -12,6 +11,10 @@
     <EmbeddedResource Remove="PlayerData\Export\**" />
     <None Remove="PlayerData\Export\**" />
   </ItemGroup>
+
+	<ItemGroup>
+		<None Include="data\icon.png" CopyToOutputDirectory="PreserveNewest" />
+	</ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="Chaos.NaCl.Standard" Version="1.0.0" />
@@ -59,6 +62,10 @@
 
   <ItemGroup>
     <None Include="..\.editorconfig" Link=".editorconfig" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Data\" />
   </ItemGroup>
 
 </Project>

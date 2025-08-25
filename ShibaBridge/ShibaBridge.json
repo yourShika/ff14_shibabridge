@@ -1,5 +1,5 @@
 {
-  "Author": "Eauldane",
+  "Author": "YourShika",
   "Name": "ShibaBridge",
   "Punchline": "Share your true self.",
   "Description": "This plugin will synchronize your Penumbra mods and current Glamourer state with other paired clients automatically.",
@@ -8,7 +8,7 @@
   "Tags": [
     "customization"
   ],
-  "IconUrl": "https://i.imgur.com/cMKeOjm.jpeg",
-  "RepoUrl": "https://github.com/Eauldane/ShibaBridgeClient",
+  "IconUrl": "data/icon.png",
+  "RepoUrl": "https://github.com/KamilBura/ff14_shibabridge",
   "CanUnloadAsync": true
 }
