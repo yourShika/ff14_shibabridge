@@ -22,9 +22,9 @@ namespace ShibaBridge.WebAPI;
 public sealed partial class ApiController : DisposableMediatorSubscriberBase, IShibaBridgeHubClient
 {
     public const string ShibaBridgeServer = "ShibaBridge Main Server";
-    public const string ShibaBridgeServiceUri = "wss://hub.shibabridge.com";
-    public const string ShibaBridgeServiceApiUri = "wss://hub.shibabridge.com/";
-    public const string ShibaBridgeServiceHubUri = "wss://hub.shibabridge.com/shibabridge";
+    public const string ShibaBridgeServiceUri = "wss://localhost";
+    public const string ShibaBridgeServiceApiUri = "wss://localhost/";
+    public const string ShibaBridgeServiceHubUri = "wss://localhost/shibabridge";
 
     private readonly DalamudUtilService _dalamudUtil;
     private readonly HubFactory _hubFactory;
