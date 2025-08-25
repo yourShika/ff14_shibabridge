@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using ShibaBridge.Server.Models;
 using ShibaBridge.Server.Services;
+using Microsoft.Extensions.Logging;
 
 namespace ShibaBridge.Server.Controllers;
 
@@ -12,11 +13,24 @@ namespace ShibaBridge.Server.Controllers;
 [Route("api/[controller]")]
 public class AuthController : ControllerBase
 {
+    private readonly ILogger<AuthController> _logger;
+
+    public AuthController(ILogger<AuthController> logger)
+    {
+        _logger = logger;
+    }
+
     [HttpPost("register")]
     public ActionResult<UserIdentity> Register(RegisterRequest request, [FromServices] AuthService service)
-        => Ok(service.Register(request));
+    {
+        _logger.LogInformation("Register requested for {Player} from {World}", request.PlayerName, request.World);
+        return Ok(service.Register(request));
+    }
 
     [HttpPost("login")]
     public ActionResult<LoginResponse> Login(LoginRequest request, [FromServices] AuthService service)
-        => Ok(service.Login(request));
+    {
+        _logger.LogInformation("Login attempt with API key {ApiKey}", request.ApiKey);
+        return Ok(service.Login(request));
+    }
 }

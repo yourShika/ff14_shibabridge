@@ -4,6 +4,7 @@ using ShibaBridge.API.Routes;
 using ShibaBridge.Server.Services;
 using System.Collections.Generic;
 using System.IO;
+using Microsoft.Extensions.Logging;
 
 namespace ShibaBridge.Server.Controllers;
 
@@ -18,10 +19,12 @@ namespace ShibaBridge.Server.Controllers;
 public class FileController : ControllerBase
 {
     private readonly FileTransferService _fileTransfer;
+    private readonly ILogger<FileController> _logger;
 
-    public FileController(FileTransferService fileTransfer)
+    public FileController(FileTransferService fileTransfer, ILogger<FileController> logger)
     {
         _fileTransfer = fileTransfer;
+        _logger = logger;
     }
 
     /// <summary>
@@ -31,6 +34,7 @@ public class FileController : ControllerBase
     [HttpPost(ShibaBridgeFiles.ServerFiles_Upload + "/{hash}")]
     public async Task<IActionResult> Upload(string hash)
     {
+        _logger.LogInformation("Uploading file {Hash}", hash);
         using var ms = new MemoryStream();
         await Request.Body.CopyToAsync(ms);
         _fileTransfer.Upload(hash, ms.ToArray());
@@ -43,6 +47,7 @@ public class FileController : ControllerBase
     [HttpPost(ShibaBridgeFiles.ServerFiles_FilesSend)]
     public ActionResult<List<UploadFileDto>> FilesSend([FromBody] FilesSendDto dto)
     {
+        _logger.LogInformation("FilesSend for {Count} hashes", dto.FileHashes.Count);
         var uploads = new List<UploadFileDto>();
         foreach (var hash in dto.FileHashes)
         {
@@ -61,6 +66,7 @@ public class FileController : ControllerBase
     [HttpGet(ShibaBridgeFiles.ServerFiles_GetSizes)]
     public ActionResult<List<DownloadFileDto>> GetSizes([FromBody] List<string> hashes)
     {
+        _logger.LogInformation("GetSizes for {Count} hashes", hashes.Count);
         var result = new List<DownloadFileDto>();
         foreach (var hash in hashes)
         {
@@ -83,6 +89,7 @@ public class FileController : ControllerBase
     [HttpPost(ShibaBridgeFiles.ServerFiles_DeleteAll)]
     public IActionResult DeleteAll()
     {
+        _logger.LogInformation("Deleting all files");
         _fileTransfer.DeleteAll();
         return Ok();
     }
@@ -94,6 +101,7 @@ public class FileController : ControllerBase
     [HttpGet("download/{hash}")]
     public async Task<IActionResult> Download(string hash, CancellationToken cancellationToken)
     {
+        _logger.LogInformation("Downloading file {Hash}", hash);
         var data = await _fileTransfer.WaitForFileAsync(hash, cancellationToken);
         return File(data, "application/octet-stream");
     }
