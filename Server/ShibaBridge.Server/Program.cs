@@ -14,6 +14,7 @@ builder.Services.AddSwaggerGen();
 // Simple in-memory services for demo purposes
 builder.Services.AddSingleton<AuthService>();
 builder.Services.AddSingleton<PairingService>();
+builder.Services.AddSingleton<FileTransferService>();
 
 // Basic rate limiting per remote IP
 builder.Services.AddRateLimiter(options =>
