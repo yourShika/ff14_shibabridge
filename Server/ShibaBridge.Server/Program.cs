@@ -3,8 +3,12 @@ using ShibaBridge.Server.Hubs;
 using ShibaBridge.Server.Services;
 using ShibaBridge.API.SignalR;
 using System.Threading.RateLimiting;
+using Microsoft.Extensions.Logging;
 
 var builder = WebApplication.CreateBuilder(args);
+
+builder.Logging.AddSimpleConsole();
+builder.Logging.SetMinimumLevel(LogLevel.Debug);
 
 // Core services
 builder.Services.AddControllers();
