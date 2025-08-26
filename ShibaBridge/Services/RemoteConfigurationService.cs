@@ -73,7 +73,7 @@ public sealed class RemoteConfigurationService
     {
         ulong ts = 1755859494;
 
-        var configString = "{\"mainServer\":{\"api_url\":\"wss://localhost/\",\"hub_url\":\"wss://localhost/shibabridge\"},\"noSnap\":{\"listOfPlugins\":[\"Snapper\",\"Snappy\",\"Meddle.Plugin\"]}}";
+        var configString = "{\"mainServer\":{\"api_url\":\"wss://localhost:5000/\",\"hub_url\":\"wss://localhost:5000/shibabridge\"},\"noSnap\":{\"listOfPlugins\":[\"Snapper\",\"Snappy\",\"Meddle.Plugin\"]}}";
 
 
         _configService.Current.Configuration = JsonNode.Parse(configString)!.AsObject();
