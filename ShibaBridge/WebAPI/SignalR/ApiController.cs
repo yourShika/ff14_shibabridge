@@ -112,7 +112,10 @@ public sealed partial class ApiController : DisposableMediatorSubscriberBase, IS
             Logger.LogInformation("Not recreating Connection, paused");
             _connectionDto = null;
             await StopConnection(ServerState.Disconnected).ConfigureAwait(false);
-            _connectionCancellationTokenSource?.Cancel();
+            if (_connectionCancellationTokenSource is not null)
+            {
+                await _connectionCancellationTokenSource.CancelAsync();
+            }
             return;
         }
 
@@ -124,7 +127,10 @@ public sealed partial class ApiController : DisposableMediatorSubscriberBase, IS
             Mediator.Publish(new NotificationMessage("Multiple Identical Characters detected", "Your Service configuration has multiple characters with the same name and world set up. Delete the duplicates in the character management to be able to connect to ShibaBridge.",
                 NotificationType.Error));
             await StopConnection(ServerState.MultiChara).ConfigureAwait(false);
-            _connectionCancellationTokenSource?.Cancel();
+            if (_connectionCancellationTokenSource is not null)
+            {
+                await _connectionCancellationTokenSource.CancelAsync();
+            }
             return;
         }
 
@@ -133,7 +139,10 @@ public sealed partial class ApiController : DisposableMediatorSubscriberBase, IS
             Logger.LogWarning("No secret key set for current character");
             _connectionDto = null;
             await StopConnection(ServerState.NoSecretKey).ConfigureAwait(false);
-            _connectionCancellationTokenSource?.Cancel();
+            if (_connectionCancellationTokenSource is not null)
+            {
+                await _connectionCancellationTokenSource.CancelAsync();
+            }
             return;
         }
 
@@ -143,8 +152,11 @@ public sealed partial class ApiController : DisposableMediatorSubscriberBase, IS
         Mediator.Publish(new EventMessage(new Services.Events.Event(nameof(ApiController), Services.Events.EventSeverity.Informational,
             $"Starting Connection to {_serverManager.CurrentServer.ServerName}")));
 
-        _connectionCancellationTokenSource?.Cancel();
-        _connectionCancellationTokenSource?.Dispose();
+        if (_connectionCancellationTokenSource is not null)
+        {
+            await _connectionCancellationTokenSource.CancelAsync();
+            _connectionCancellationTokenSource.Dispose();
+        }
         _connectionCancellationTokenSource = new CancellationTokenSource();
         var token = _connectionCancellationTokenSource.Token;
         while (ServerState is not ServerState.Connected && !token.IsCancellationRequested)
@@ -291,9 +303,9 @@ public sealed partial class ApiController : DisposableMediatorSubscriberBase, IS
         await UserSetPairPermissions(new UserPermissionsDto(userData, perm)).ConfigureAwait(false);
     }
 
-    public Task<ConnectionDto> GetConnectionDto() => GetConnectionDto(true);
+    public Task<ConnectionDto> GetConnectionDto() => GetConnectionDto(publishConnected: true);
 
-    public async Task<ConnectionDto> GetConnectionDto(bool publishConnected = true)
+    public async Task<ConnectionDto> GetConnectionDto(bool publishConnected)
     {
         var dto = await _shibabridgeHub!.InvokeAsync<ConnectionDto>(nameof(GetConnectionDto)).ConfigureAwait(false);
         if (publishConnected) Mediator.Publish(new ConnectedMessage(dto));
@@ -470,7 +482,10 @@ public sealed partial class ApiController : DisposableMediatorSubscriberBase, IS
                 $"Stopping existing connection to {_serverManager.CurrentServer.ServerName}")));
 
             _initialized = false;
-            _healthCheckTokenSource?.Cancel();
+            if (_healthCheckTokenSource is not null)
+            {
+                await _healthCheckTokenSource.CancelAsync();
+            }
             Mediator.Publish(new DisconnectedMessage());
             _shibabridgeHub = null;
             _connectionDto = null;
