@@ -12,6 +12,7 @@ public class AuthService
 {
     private readonly ILogger<AuthService> _logger;
     private readonly ConcurrentDictionary<string, UserIdentity> _users = new();
+    private readonly ConcurrentDictionary<string, UserIdentity> _hashedUsers = new();
 
     public AuthService(ILogger<AuthService> logger)
     {
@@ -30,6 +31,20 @@ public class AuthService
     {
         // Placeholder: in reality the API key would be validated and a JWT issued
         _logger.LogInformation("Login requested with API key {ApiKey}", request.ApiKey);
+        return new LoginResponse(Convert.ToBase64String(Guid.NewGuid().ToByteArray()));
+    }
+
+    public UserIdentity RegisterHashedKey(string hashedSecretKey)
+    {
+        var user = new UserIdentity(Guid.NewGuid().ToString(), string.Empty, string.Empty);
+        _hashedUsers[hashedSecretKey] = user;
+        _logger.LogInformation("RegisterHashedKey {Key}", hashedSecretKey);
+        return user;
+    }
+
+    public LoginResponse LoginHashedKey(string hashedSecretKey)
+    {
+        _logger.LogInformation("LoginHashedKey {Key}", hashedSecretKey);
         return new LoginResponse(Convert.ToBase64String(Guid.NewGuid().ToByteArray()));
     }
 }
