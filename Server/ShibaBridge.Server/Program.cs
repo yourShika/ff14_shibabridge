@@ -12,7 +12,7 @@ builder.Logging.SetMinimumLevel(LogLevel.Debug);
 
 // Core services
 builder.Services.AddControllers();
-builder.Services.AddSignalR();
+builder.Services.AddSignalR().AddMessagePackProtocol();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
@@ -45,7 +45,7 @@ if (app.Environment.IsDevelopment())
 
 app.UseRateLimiter();
 app.MapControllers();
-app.MapHub<SyncHub>(IShibaBridgeHub.Path);
+app.MapHub<ShibaBridgeHub>(IShibaBridgeHub.Path);
 
 // Health endpoint used by admins or orchestrators
 app.MapGet("/health", () => Results.Ok(new { status = "ok" }));
