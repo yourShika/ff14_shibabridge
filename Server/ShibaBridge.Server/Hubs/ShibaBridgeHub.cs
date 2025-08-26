@@ -58,7 +58,11 @@ public class ShibaBridgeHub : Hub
     public Task<bool> GroupChangePassword(GroupPasswordDto groupPassword) => Task.FromResult(false);
     public Task GroupChatSendMsg(GroupDto group, ChatMessage message) => Task.CompletedTask;
     public Task GroupClear(GroupDto group) => Task.CompletedTask;
-    public Task<GroupPasswordDto> GroupCreate() => Task.FromResult(new GroupPasswordDto());
+    public Task<GroupPasswordDto> GroupCreate()
+    {
+        var group = new GroupData(Guid.NewGuid().ToString());
+        return Task.FromResult(new GroupPasswordDto(group, string.Empty));
+    }
     public Task<List<string>> GroupCreateTempInvite(GroupDto group, int amount) => Task.FromResult(new List<string>());
     public Task GroupDelete(GroupDto group) => Task.CompletedTask;
     public Task<List<BannedGroupUserDto>> GroupGetBannedUsers(GroupDto group) => Task.FromResult(new List<BannedGroupUserDto>());
@@ -77,7 +81,10 @@ public class ShibaBridgeHub : Hub
     public Task UserDelete() => Task.CompletedTask;
     public Task<List<OnlineUserIdentDto>> UserGetOnlinePairs() => Task.FromResult(new List<OnlineUserIdentDto>());
     public Task<List<UserPairDto>> UserGetPairedClients() => Task.FromResult(new List<UserPairDto>());
-    public Task<UserProfileDto> UserGetProfile(UserDto dto) => Task.FromResult(new UserProfileDto());
+    public Task<UserProfileDto> UserGetProfile(UserDto dto)
+    {
+        return Task.FromResult(new UserProfileDto(dto.User, false, null, null, null));
+    }
     public Task UserPushData(UserCharaDataMessageDto dto) => Task.CompletedTask;
     public Task UserRemovePair(UserDto userDto) => Task.CompletedTask;
     public Task UserReportProfile(UserProfileReportDto userDto) => Task.CompletedTask;
