@@ -61,6 +61,7 @@ public class ShibaBridgeHub : Hub
     public Task<GroupPasswordDto> GroupCreate()
     {
         var group = new GroupData(Guid.NewGuid().ToString());
+        // Korrigierte Instanziierung mit beiden erforderlichen Parametern
         return Task.FromResult(new GroupPasswordDto(group, string.Empty));
     }
     public Task<List<string>> GroupCreateTempInvite(GroupDto group, int amount) => Task.FromResult(new List<string>());

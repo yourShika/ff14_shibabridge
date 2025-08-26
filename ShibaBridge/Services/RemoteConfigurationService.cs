@@ -12,15 +12,6 @@ namespace ShibaBridge.Services;
 
 public sealed class RemoteConfigurationService
 {
- //   private readonly static Dictionary<string, string> ConfigPublicKeys = new(StringComparer.Ordinal)
- //   {
- //       { "", "" },
- //   };
-
-    private readonly static string[] ConfigSources = [
-        "https://shibabridge.com/config.json",
-    ];
-
     private readonly ILogger<RemoteConfigurationService> _logger;
     private readonly RemoteConfigCacheService _configService;
     private readonly Task _initTask;
@@ -59,14 +50,6 @@ public sealed class RemoteConfigurationService
         // Removed Lop's remote config code. Function exists purely to keep things clean.
         LoadConfig();
         return Task.CompletedTask;
-    }
-
-    private static bool VerifySignature(string message, ulong ts, string signature, string pubKey)
-    {
-        byte[] msg = [.. BitConverter.GetBytes(ts), .. Encoding.UTF8.GetBytes(message)];
-        byte[] sig = Convert.FromBase64String(signature);
-        byte[] pub = Convert.FromBase64String(pubKey);
-        return Ed25519.Verify(sig, msg, pub);
     }
 
     private void LoadConfig()
