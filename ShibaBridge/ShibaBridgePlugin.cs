@@ -1,4 +1,8 @@
 // ShibaBridgePlugin - part of ShibaBridge project.
+// Diese Klasse ist der Haupt-Hintergrunddienst des Plugins.
+// Sie wird beim Start des Hosts geladen und kümmert sich um Initialisierung,
+// Event-Handling und das Lifecycle-Management von Services.
+
 using ShibaBridge.FileCache;
 using ShibaBridge.ShibaBridgeConfiguration;
 using ShibaBridge.PlayerData.Pairs;
@@ -14,28 +18,28 @@ using System.Reflection;
 namespace ShibaBridge;
 
 /// <summary>
-///     Main entry point for the plugin. Handles startup, shutdown and
-///     initialization of all runtime services. The plugin is hosted as a
-///     background service and subscribes to events through the mediator
-///     base class.
+/// Haupt-Einstiegspunkt für das Plugin. 
+/// - Startet beim Laden durch den Host
+/// - Registriert Event-Handler
+/// - Initialisiert benötigte Services nach dem Login
+/// - Leitet Events über den Mediator weiter
 /// </summary>
 public class ShibaBridgePlugin : MediatorSubscriberBase, IHostedService
 {
-    // Services that are injected by the host and used throughout the plugin
-    private readonly DalamudUtilService _dalamudUtil;
-    private readonly ShibaBridgeConfigService _shibabridgeConfigService;
-    private readonly ServerConfigurationManager _serverConfigurationManager;
-    private readonly IServiceScopeFactory _serviceScopeFactory;
+    // Services, die durch Dependency Injection bereitgestellt werden:
+    private readonly DalamudUtilService _dalamudUtil;                  // Utility für Client-Zustand (Login/Logout, Player-Präsenz)
+    private readonly ShibaBridgeConfigService _shibabridgeConfigService; // Zugriff auf Plugin-Konfiguration
+    private readonly ServerConfigurationManager _serverConfigurationManager; // Verwaltung von Server-Konfigs
+    private readonly IServiceScopeFactory _serviceScopeFactory;        // Factory zum Erstellen von Service-Scopes
 
-    // Runtime scope that contains services only required after login
+    // Laufzeit-spezifischer Scope (wird nach Login erzeugt und beim Logout disposed)
     private IServiceScope? _runtimeServiceScope;
 
-    // Task used to delay the launch until the player is available
+    // Task, der den verzögerten Start der Charakter-Manager-Services koordiniert
     private Task? _launchTask = null;
 
     /// <summary>
-    ///     Constructor wires up all required services and stores references for
-    ///     later use.
+    /// Konstruktor: speichert Services und ruft den Basiskonstruktor (MediatorSubscriberBase) auf.
     /// </summary>
     public ShibaBridgePlugin(ILogger<ShibaBridgePlugin> logger, ShibaBridgeConfigService shibabridgeConfigService,
         ServerConfigurationManager serverConfigurationManager,
@@ -49,68 +53,75 @@ public class ShibaBridgePlugin : MediatorSubscriberBase, IHostedService
     }
 
     /// <summary>
-    ///     Called by the host when the plugin is starting. Registers event
-    ///     handlers and kicks off background processing.
+    /// Wird vom Host beim Start des Plugins aufgerufen.
+    /// - Loggt Startnachricht
+    /// - Abonniert relevante Mediator-Events
+    /// - Startet Event-Queue-Verarbeitung
     /// </summary>
     public Task StartAsync(CancellationToken cancellationToken)
     {
+        // Versionsinfo des Plugins holen
         var version = Assembly.GetExecutingAssembly().GetName().Version!;
         Logger.LogInformation("Launching {name} {major}.{minor}.{build}.{rev}", "ShibaBridge Sync", version.Major, version.Minor, version.Build, version.Revision);
+
+        // Info-Event an Mediator publizieren
         Mediator.Publish(new EventMessage(new Services.Events.Event(nameof(ShibaBridgePlugin), Services.Events.EventSeverity.Informational,
             $"Starting ShibaBridge Sync {version.Major}.{version.Minor}.{version.Build}.{version.Revision}")));
 
-        // Begin listening for Dalamud events. When they fire we may need to
-        // create the runtime service scope.
+        // Event-Subscriptions:
+        // - Wechsel ins Haupt-UI löst evtl. Service-Launch aus
         Mediator.Subscribe<SwitchToMainUiMessage>(this, (msg) => { if (_launchTask == null || _launchTask.IsCompleted) _launchTask = Task.Run(WaitForPlayerAndLaunchCharacterManager); });
+        // - Login-Event -> Starte Service-Launch
         Mediator.Subscribe<DalamudLoginMessage>(this, (_) => DalamudUtilOnLogIn());
+        // - Logout-Event -> Dispose Services
         Mediator.Subscribe<DalamudLogoutMessage>(this, (_) => DalamudUtilOnLogOut());
 
+        // Startet die Verarbeitung der Event-Queue (wichtig für Mediator-System)
         Mediator.StartQueueProcessing();
 
         return Task.CompletedTask;
     }
 
     /// <summary>
-    ///     Called by the host when the plugin is stopping. Cleans up all
-    ///     subscriptions and disposes the runtime scope.
+    /// Wird vom Host beim Stoppen des Plugins aufgerufen.
+    /// - Entfernt Subscriptions
+    /// - Dispose des Runtime-Scopes
     /// </summary>
     public Task StopAsync(CancellationToken cancellationToken)
     {
-        UnsubscribeAll();
-
-        DalamudUtilOnLogOut();
-
+        UnsubscribeAll();          // Alle Mediator-Subscriptions entfernen
+        DalamudUtilOnLogOut();     // Laufzeit-Services abbauen
         Logger.LogDebug("Halting ShibaBridgePlugin");
-
         return Task.CompletedTask;
     }
 
     /// <summary>
-    ///     Triggers service launch after the game client signals a login.
+    /// Wird beim Login getriggert: startet Hintergrund-Task zum Initialisieren der Charakter-Manager.
     /// </summary>
     private void DalamudUtilOnLogIn()
     {
         Logger?.LogDebug("Client login");
-        if (_launchTask == null || _launchTask.IsCompleted) _launchTask = Task.Run(WaitForPlayerAndLaunchCharacterManager);
+        if (_launchTask == null || _launchTask.IsCompleted)
+            _launchTask = Task.Run(WaitForPlayerAndLaunchCharacterManager);
     }
 
     /// <summary>
-    ///     Disposes the runtime scope when the player logs out.
+    /// Wird beim Logout getriggert: entsorgt den Laufzeit-Scope und damit alle Services, 
+    /// die nur während einer aktiven Spielsitzung laufen sollen.
     /// </summary>
     private void DalamudUtilOnLogOut()
     {
         Logger?.LogDebug("Client logout");
-
         _runtimeServiceScope?.Dispose();
     }
 
     /// <summary>
-    ///     Waits until the player is fully present in the world and then
-    ///     resolves all required runtime services. This method is executed on a
-    ///     background thread to avoid blocking the caller.
+    /// Hintergrund-Task, der wartet, bis der Spieler im Spiel geladen ist.
+    /// Danach werden die benötigten Services aus dem Laufzeit-Scope initialisiert.
     /// </summary>
     private async Task WaitForPlayerAndLaunchCharacterManager()
     {
+        // Polling, bis Spieler verfügbar ist
         while (!await _dalamudUtil.GetIsPlayerPresentAsync().ConfigureAwait(false))
         {
             await Task.Delay(100).ConfigureAwait(false);
@@ -120,15 +131,22 @@ public class ShibaBridgePlugin : MediatorSubscriberBase, IHostedService
         {
             Logger?.LogDebug("Launching Managers");
 
+            // Vorherigen Scope entsorgen, neuen anlegen
             _runtimeServiceScope?.Dispose();
             _runtimeServiceScope = _serviceScopeFactory.CreateScope();
+
+            // Basis-Services aufrufen (UI, Commands)
             _runtimeServiceScope.ServiceProvider.GetRequiredService<UiService>();
             _runtimeServiceScope.ServiceProvider.GetRequiredService<CommandManagerService>();
+
+            // Falls Setup oder Server-Config ungültig -> Intro-UI öffnen
             if (!_shibabridgeConfigService.Current.HasValidSetup() || !_serverConfigurationManager.HasValidConfig())
             {
                 Mediator.Publish(new SwitchToIntroUiMessage());
                 return;
             }
+
+            // Weitere Laufzeit-Services initialisieren
             _runtimeServiceScope.ServiceProvider.GetRequiredService<CacheCreationService>();
             _runtimeServiceScope.ServiceProvider.GetRequiredService<TransientResourceManager>();
             _runtimeServiceScope.ServiceProvider.GetRequiredService<OnlinePlayerManager>();
@@ -137,6 +155,7 @@ public class ShibaBridgePlugin : MediatorSubscriberBase, IHostedService
             _runtimeServiceScope.ServiceProvider.GetRequiredService<GuiHookService>();
 
 #if !DEBUG
+            // Prüfen, ob LogLevel korrekt gesetzt ist (nicht zu detailliert für normalen Betrieb)
             if (_shibabridgeConfigService.Current.LogLevel != LogLevel.Information)
             {
                 Mediator.Publish(new NotificationMessage("Abnormal Log Level",
@@ -147,6 +166,7 @@ public class ShibaBridgePlugin : MediatorSubscriberBase, IHostedService
         }
         catch (Exception ex)
         {
+            // Fehler beim Starten der Services protokollieren
             Logger?.LogCritical(ex, "Error during launch of managers");
         }
     }

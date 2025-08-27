@@ -1,73 +1,84 @@
 // Plugin - part of ShibaBridge project.
-﻿using Dalamud.Game.ClientState.Objects;
-using Dalamud.Interface.ImGuiFileDialog;
-using Dalamud.Interface.Windowing;
-using Dalamud.Plugin;
-using Dalamud.Plugin.Services;
-using ShibaBridge.FileCache;
-using ShibaBridge.Interop;
-using ShibaBridge.Interop.Ipc;
-using ShibaBridge.ShibaBridgeConfiguration;
-using ShibaBridge.ShibaBridgeConfiguration.Configurations;
-using ShibaBridge.PlayerData.Factories;
-using ShibaBridge.PlayerData.Pairs;
-using ShibaBridge.PlayerData.Services;
-using ShibaBridge.Services;
-using ShibaBridge.Services.Events;
-using ShibaBridge.Services.Mediator;
-using ShibaBridge.Services.ServerConfiguration;
-using ShibaBridge.UI;
-using ShibaBridge.UI.Components;
-using ShibaBridge.UI.Components.Popup;
-using ShibaBridge.UI.Handlers;
-using ShibaBridge.WebAPI;
-using ShibaBridge.WebAPI.Files;
-using ShibaBridge.WebAPI.SignalR;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
-using ShibaBridge.Services.CharaData;
+// Diese Klasse ist der Einstiegspunkt des Dalamud-Plugins. 
+// Sie implementiert IDalamudPlugin und initialisiert alle Services, die ShibaBridge benötigt.
 
-using ShibaBridge;
+using Dalamud.Game.ClientState.Objects;           // Zugriff auf Spielfiguren und Objekte
+using Dalamud.Interface.ImGuiFileDialog;          // FileDialog für ImGui
+using Dalamud.Interface.Windowing;                // Fensterverwaltung für UI
+using Dalamud.Plugin;                             // Basis-Interface für Dalamud Plugins
+using Dalamud.Plugin.Services;                    // Services aus Dalamud (z.B. Chat, Framework, etc.)
+using ShibaBridge.FileCache;                      // Eigenes File-Cache-System
+using ShibaBridge.Interop;                        // Interop-Komponenten
+using ShibaBridge.Interop.Ipc;                    // IPC-Schnittstellen zu anderen Plugins
+using ShibaBridge.ShibaBridgeConfiguration;       // Konfigurationssystem
+using ShibaBridge.ShibaBridgeConfiguration.Configurations;
+using ShibaBridge.PlayerData.Factories;           // Factory-Klassen für Spieler-Daten
+using ShibaBridge.PlayerData.Pairs;               // Logik für "Pairs"
+using ShibaBridge.PlayerData.Services;            // Services rund um Spieler-Daten
+using ShibaBridge.Services;                       // Allgemeine Services
+using ShibaBridge.Services.Events;                // Event-System
+using ShibaBridge.Services.Mediator;              // Mediator für lose Kopplung von Services
+using ShibaBridge.Services.ServerConfiguration;   // Serverkonfigurations-Management
+using ShibaBridge.UI;                             // UI-Framework
+using ShibaBridge.UI.Components;                  // UI-Komponenten
+using ShibaBridge.UI.Components.Popup;            // Popup-Komponenten
+using ShibaBridge.UI.Handlers;                    // UI-Handler
+using ShibaBridge.WebAPI;                         // Web-API Kommunikation
+using ShibaBridge.WebAPI.Files;                   // Datei-Upload/Download über Web-API
+using ShibaBridge.WebAPI.SignalR;                 // SignalR-Integration (Realtime Kommunikation)
+using Microsoft.Extensions.DependencyInjection;   // Dependency Injection
+using Microsoft.Extensions.Hosting;               // Host-Builder für Services
+using Microsoft.Extensions.Logging;               // Logging
+using ShibaBridge.Services.CharaData;             // Charakter-Daten Services
+
+using ShibaBridge; // Root-Namespace
 
 namespace ShibaBridge;
 
+// Haupt-Plugin-Klasse
 public sealed class Plugin : IDalamudPlugin
 {
-    private readonly IHost _host;
+    private readonly IHost _host; // .NET Host verwaltet Services und Hintergrundprozesse
 
+    // Suppression von Analyzer-Warnungen für dieses Feld (z.B. statische Initialisierung, Nullable, etc.)
 #pragma warning disable CA2211, CS8618, MA0069, S1104, S2223
-    public static Plugin Self;
+    public static Plugin Self; // Statische Referenz auf das Plugin selbst (Singleton)
 #pragma warning restore CA2211, CS8618, MA0069, S1104, S2223
-    public Action<IFramework>? RealOnFrameworkUpdate { get; set; }
 
-    // Proxy function in the ShibaBridgeSync namespace to avoid confusion in /xlstats
+    public Action<IFramework>? RealOnFrameworkUpdate { get; set; } // Hook für Framework-Update
+
+    // Proxy-Methode, die beim Framework-Update aufgerufen wird
+    // -> ruft den Delegate auf, falls gesetzt
     public void OnFrameworkUpdate(IFramework framework)
     {
         RealOnFrameworkUpdate?.Invoke(framework);
     }
 
+    // Konstruktor: erhält alle Dalamud Services und initialisiert den Host
     public Plugin(IDalamudPluginInterface pluginInterface, ICommandManager commandManager, IDataManager gameData,
         IFramework framework, IObjectTable objectTable, IClientState clientState, ICondition condition, IChatGui chatGui,
         IGameGui gameGui, IDtrBar dtrBar, IToastGui toastGui, IPluginLog pluginLog, ITargetManager targetManager, INotificationManager notificationManager,
         ITextureProvider textureProvider, IContextMenu contextMenu, IGameInteropProvider gameInteropProvider,
         INamePlateGui namePlateGui, IGameConfig gameConfig, IPartyList partyList)
     {
-        Plugin.Self = this;
+        Plugin.Self = this; // Singleton setzen
+
+        // Host konfigurieren (Service-Container + Hintergrundprozesse)
         _host = new HostBuilder()
-        .UseContentRoot(pluginInterface.ConfigDirectory.FullName)
+        .UseContentRoot(pluginInterface.ConfigDirectory.FullName) // Root-Ordner für Config
         .ConfigureLogging(lb =>
         {
-            lb.ClearProviders();
-            lb.AddDalamudLogging(pluginLog);
-            lb.SetMinimumLevel(LogLevel.Trace);
+            lb.ClearProviders();                   // Standard-Logger entfernen
+            lb.AddDalamudLogging(pluginLog);       // Dalamud-Logging verwenden
+            lb.SetMinimumLevel(LogLevel.Trace);    // Minimales Loglevel auf Trace setzen
         })
         .ConfigureServices(collection =>
         {
+            // Fenster- und FileDialog-Management
             collection.AddSingleton(new WindowSystem("ShibaBridge"));
             collection.AddSingleton<FileDialogManager>();
 
-            // add dalamud services
+            // Registrierung der Dalamud-Services
             collection.AddSingleton(_ => pluginInterface);
             collection.AddSingleton(_ => pluginInterface.UiBuilder);
             collection.AddSingleton(_ => commandManager);
@@ -90,7 +101,7 @@ public sealed class Plugin : IDalamudPlugin
             collection.AddSingleton(_ => gameConfig);
             collection.AddSingleton(_ => partyList);
 
-            // add shibabridge related singletons
+            // Registrierung der ShibaBridge-Services (Singletons)
             collection.AddSingleton<ShibaBridgeMediator>();
             collection.AddSingleton<FileCacheManager>();
             collection.AddSingleton<ServerConfigurationManager>();
@@ -117,12 +128,14 @@ public sealed class Plugin : IDalamudPlugin
             collection.AddSingleton<PluginWatcherService>();
             collection.AddSingleton<PlayerPerformanceService>();
 
+            // Registrierung der Charakter-Daten Manager
             collection.AddSingleton<CharaDataManager>();
             collection.AddSingleton<CharaDataFileHandler>();
             collection.AddSingleton<CharaDataCharacterHandler>();
             collection.AddSingleton<CharaDataNearbyManager>();
             collection.AddSingleton<CharaDataGposeTogetherManager>();
 
+            // Weitere IPC- und Utility-Services
             collection.AddSingleton<VfxSpawnManager>();
             collection.AddSingleton<BlockedCharacterHandler>();
             collection.AddSingleton<IpcProvider>();
@@ -145,6 +158,7 @@ public sealed class Plugin : IDalamudPlugin
             collection.AddSingleton<NotificationService>();
             collection.AddSingleton<NoSnapService>();
 
+            // Registrierung der Konfigurationsservices (pro Feature eigene Datei im Config-Ordner)
             collection.AddSingleton((s) => new ShibaBridgeConfigService(pluginInterface.ConfigDirectory.FullName));
             collection.AddSingleton((s) => new ServerConfigService(pluginInterface.ConfigDirectory.FullName));
             collection.AddSingleton((s) => new NotesConfigService(pluginInterface.ConfigDirectory.FullName));
@@ -156,6 +170,8 @@ public sealed class Plugin : IDalamudPlugin
             collection.AddSingleton((s) => new ServerBlockConfigService(pluginInterface.ConfigDirectory.FullName));
             collection.AddSingleton((s) => new CharaDataConfigService(pluginInterface.ConfigDirectory.FullName));
             collection.AddSingleton((s) => new RemoteConfigCacheService(pluginInterface.ConfigDirectory.FullName));
+
+            // Mapping generischer Interfaces auf konkrete Config-Implementierungen
             collection.AddSingleton<IConfigService<IShibaBridgeConfiguration>>(s => s.GetRequiredService<ShibaBridgeConfigService>());
             collection.AddSingleton<IConfigService<IShibaBridgeConfiguration>>(s => s.GetRequiredService<ServerConfigService>());
             collection.AddSingleton<IConfigService<IShibaBridgeConfiguration>>(s => s.GetRequiredService<NotesConfigService>());
@@ -167,13 +183,15 @@ public sealed class Plugin : IDalamudPlugin
             collection.AddSingleton<IConfigService<IShibaBridgeConfiguration>>(s => s.GetRequiredService<ServerBlockConfigService>());
             collection.AddSingleton<IConfigService<IShibaBridgeConfiguration>>(s => s.GetRequiredService<CharaDataConfigService>());
             collection.AddSingleton<IConfigService<IShibaBridgeConfiguration>>(s => s.GetRequiredService<RemoteConfigCacheService>());
+
             collection.AddSingleton<ConfigurationMigrator>();
             collection.AddSingleton<ConfigurationSaveService>();
             collection.AddSingleton<RemoteConfigurationService>();
 
+            // Wiederholung (HubFactory schon weiter oben – evtl. Legacy-Redundanz)
             collection.AddSingleton<HubFactory>();
 
-            // add scoped services
+            // Scoped Services (werden pro Instanz erstellt, nicht global wie Singletons)
             collection.AddScoped<CacheMonitor>();
             collection.AddScoped<UiFactory>();
             collection.AddScoped<WindowMediatorSubscriberBase, SettingsUi>();
@@ -198,6 +216,7 @@ public sealed class Plugin : IDalamudPlugin
             collection.AddScoped<ChatService>();
             collection.AddScoped<GuiHookService>();
 
+            // Hosted Services (werden beim Start automatisch gestartet, laufen im Hintergrund)
             collection.AddHostedService(p => p.GetRequiredService<PluginWatcherService>());
             collection.AddHostedService(p => p.GetRequiredService<ConfigurationSaveService>());
             collection.AddHostedService(p => p.GetRequiredService<ShibaBridgeMediator>());
@@ -214,6 +233,7 @@ public sealed class Plugin : IDalamudPlugin
         })
         .Build();
 
+        // Host asynchron starten
         _ = Task.Run(async () => {
             try
             {
@@ -226,9 +246,10 @@ public sealed class Plugin : IDalamudPlugin
         }).ConfigureAwait(false);
     }
 
+    // Aufräumlogik beim Entladen des Plugins
     public void Dispose()
     {
-        _host.StopAsync().GetAwaiter().GetResult();
-        _host.Dispose();
+        _host.StopAsync().GetAwaiter().GetResult(); // Host sauber stoppen
+        _host.Dispose();                            // Ressourcen freigeben
     }
 }

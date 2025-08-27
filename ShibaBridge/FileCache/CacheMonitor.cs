@@ -1,5 +1,8 @@
 // CacheMonitor - part of ShibaBridge project.
-﻿using ShibaBridge.Interop.Ipc;
+// Diese Klasse überwacht (Monitor) die Cache-Ornder von ShibaBridge, Penumbra und Subst auf Änderungen.
+// Sie reagiert auf Dateiänderungen (FileSystemWatcher) und führt vollständige Scans durch, um den Cache aktuell zu halten.
+
+using ShibaBridge.Interop.Ipc;
 using ShibaBridge.ShibaBridgeConfiguration;
 using ShibaBridge.Services;
 using ShibaBridge.Services.Mediator;
@@ -13,34 +16,45 @@ namespace ShibaBridge.FileCache;
 
 public sealed class CacheMonitor : DisposableMediatorSubscriberBase
 {
-    private readonly ShibaBridgeConfigService _configService;
-    private readonly DalamudUtilService _dalamudUtil;
-    private readonly FileCompactor _fileCompactor;
-    private readonly FileCacheManager _fileDbManager;
-    private readonly IpcManager _ipcManager;
-    private readonly PerformanceCollectorService _performanceCollector;
-    private long _currentFileProgress = 0;
-    private CancellationTokenSource _scanCancellationTokenSource = new();
-    private readonly CancellationTokenSource _periodicCalculationTokenSource = new();
-    public static readonly IImmutableList<string> AllowedFileExtensions = [".mdl", ".tex", ".mtrl", ".tmb", ".pap", ".avfx", ".atex", ".sklb", ".eid", ".phyb", ".pbd", ".scd", ".skp", ".shpk"];
+    // Referenzen auf zentrale Services
+    private readonly ShibaBridgeConfigService _configService;           // Konfiguration des Cache
+    private readonly DalamudUtilService _dalamudUtil;                   // Utility für Framework-Thread und Game-State
+    private readonly FileCompactor _fileCompactor;                      // Berechnet Dateigrößen auf NTFS/anderen FS
+    private readonly FileCacheManager _fileDbManager;                   // Manager für Cache-Datenbank
+    private readonly IpcManager _ipcManager;                            // Schnittstelle zu Penumbra IPC
+    private readonly PerformanceCollectorService _performanceCollector; // Misst Performance von Operationen
 
+    private long _currentFileProgress = 0;                                              // Fortschritt bei Scans
+    private CancellationTokenSource _scanCancellationTokenSource = new();               // Token zum Abbrechen laufender Scans
+    private readonly CancellationTokenSource _periodicCalculationTokenSource = new();   // Token für periodische Speicherberechnung
+
+    // Liste von erlaubten Dateiendungen für Caching
+    public static readonly IImmutableList<string> AllowedFileExtensions =
+        [".mdl", ".tex", ".mtrl", ".tmb", ".pap", ".avfx", ".atex", ".sklb", ".eid", ".phyb", ".pbd", ".scd", ".skp", ".shpk"];
+
+    // Konstruktor: registriert Event-Handler und startet Überwachung
     public CacheMonitor(ILogger<CacheMonitor> logger, IpcManager ipcManager, ShibaBridgeConfigService configService,
         FileCacheManager fileDbManager, ShibaBridgeMediator mediator, PerformanceCollectorService performanceCollector, DalamudUtilService dalamudUtil,
         FileCompactor fileCompactor) : base(logger, mediator)
     {
+        // Speichere Service-Referenzen
         _ipcManager = ipcManager;
         _configService = configService;
         _fileDbManager = fileDbManager;
         _performanceCollector = performanceCollector;
         _dalamudUtil = dalamudUtil;
         _fileCompactor = fileCompactor;
+
+        // Abonniere relevante Mediator-Nachrichten
         Mediator.Subscribe<PenumbraInitializedMessage>(this, (_) =>
         {
             StartPenumbraWatcher(_ipcManager.Penumbra.ModDirectory);
             StartShibaBridgeWatcher(configService.Current.CacheFolder);
             StartSubstWatcher(_fileDbManager.SubstFolder);
-            InvokeScan();
+            InvokeScan(); // Vollständiger Scan nach Penumbra-Initialisierung
         });
+
+        // Abonniere Nachrichten zum Anhalten/Fortsetzen von Scans
         Mediator.Subscribe<HaltScanMessage>(this, (msg) => HaltScan(msg.Source));
         Mediator.Subscribe<ResumeScanMessage>(this, (msg) => ResumeScan(msg.Source));
         Mediator.Subscribe<DalamudLoginMessage>(this, (_) =>
@@ -50,15 +64,21 @@ public sealed class CacheMonitor : DisposableMediatorSubscriberBase
             StartPenumbraWatcher(_ipcManager.Penumbra.ModDirectory);
             InvokeScan();
         });
+
+        // Abonniere Nachricht zum Ändern des Penumbra-Verzeichnisses
         Mediator.Subscribe<PenumbraDirectoryChangedMessage>(this, (msg) =>
         {
             StartPenumbraWatcher(msg.ModDirectory);
             InvokeScan();
         });
+
+        // Falls Penumbra/Cache bereits verfügbar sind → sofort Watcher starten
         if (_ipcManager.Penumbra.APIAvailable && !string.IsNullOrEmpty(_ipcManager.Penumbra.ModDirectory))
         {
             StartPenumbraWatcher(_ipcManager.Penumbra.ModDirectory);
         }
+
+        // Nur starten, wenn Konfiguration gültig ist
         if (configService.Current.HasValidSetup())
         {
             StartShibaBridgeWatcher(configService.Current.CacheFolder);
@@ -66,15 +86,19 @@ public sealed class CacheMonitor : DisposableMediatorSubscriberBase
             InvokeScan();
         }
 
+        // Starte periodische Speicherberechnung
         var token = _periodicCalculationTokenSource.Token;
         _ = Task.Run(async () =>
         {
             Logger.LogInformation("Starting Periodic Storage Directory Calculation Task");
             var token = _periodicCalculationTokenSource.Token;
+
+            // Initiale Berechnung
             while (!token.IsCancellationRequested)
             {
                 try
                 {
+                    // Nicht im Framework-Thread berechnen
                     while (_dalamudUtil.IsOnFrameworkThread && !token.IsCancellationRequested)
                     {
                         await Task.Delay(1).ConfigureAwait(false);
@@ -84,13 +108,16 @@ public sealed class CacheMonitor : DisposableMediatorSubscriberBase
                 }
                 catch
                 {
-                    // ignore
+                    // Ignore exceptions
                 }
                 await Task.Delay(TimeSpan.FromMinutes(1), token).ConfigureAwait(false);
             }
         }, token);
     }
 
+    // -------------------------
+    // Eigenschaften & Status
+    // -------------------------
     public long CurrentFileProgress => _currentFileProgress;
     public long FileCacheSize { get; set; }
     public long FileCacheDriveFree { get; set; }
@@ -99,17 +126,24 @@ public sealed class CacheMonitor : DisposableMediatorSubscriberBase
     public long TotalFiles { get; private set; }
     public long TotalFilesStorage { get; private set; }
 
+    // Scan pausieren (z.B. wenn andere Operationen laufen)
     public void HaltScan(string source)
     {
         HaltScanLocks.TryAdd(source, new(0));
         Interlocked.Increment(ref HaltScanLocks[source].Value);
     }
 
+    // -------------------------
+    // FileSystemWatcher & Scan-Logik
+    // -------------------------
+
+    // Watcher für ShibaBridge Cache, Subst und Penumbra
     record WatcherChange(WatcherChangeTypes ChangeType, string? OldPath = null);
     private readonly Dictionary<string, WatcherChange> _watcherChanges = new Dictionary<string, WatcherChange>(StringComparer.OrdinalIgnoreCase);
     private readonly Dictionary<string, WatcherChange> _shibabridgeChanges = new Dictionary<string, WatcherChange>(StringComparer.OrdinalIgnoreCase);
     private readonly Dictionary<string, WatcherChange> _substChanges = new Dictionary<string, WatcherChange>(StringComparer.OrdinalIgnoreCase);
 
+    // Stoppt die Überwachung und gibt Ressourcen frei
     public void StopMonitoring()
     {
         Logger.LogInformation("Stopping monitoring of Penumbra and ShibaBridge storage folders");
@@ -121,11 +155,16 @@ public sealed class CacheMonitor : DisposableMediatorSubscriberBase
         PenumbraWatcher = null;
     }
 
+    // Gibt an, ob der Speicherort auf einem NTFS-Laufwerk liegt
     public bool StorageisNTFS { get; private set; } = false;
 
+    // Startet den FileSystemWatcher für den ShibaBridge Cache
     public void StartShibaBridgeWatcher(string? shibabridgePath)
     {
+        // Dispose des alten Watchers
         ShibaBridgeWatcher?.Dispose();
+
+        // Prüfe Pfad
         if (string.IsNullOrEmpty(shibabridgePath) || !Directory.Exists(shibabridgePath))
         {
             ShibaBridgeWatcher = null;
@@ -133,10 +172,12 @@ public sealed class CacheMonitor : DisposableMediatorSubscriberBase
             return;
         }
 
+        // Prüfe, ob Pfad auf NTFS liegt
         DriveInfo di = new(new DirectoryInfo(_configService.Current.CacheFolder).Root.FullName);
         StorageisNTFS = string.Equals("NTFS", di.DriveFormat, StringComparison.OrdinalIgnoreCase);
         Logger.LogInformation("ShibaBridge Storage is on NTFS drive: {isNtfs}", StorageisNTFS);
 
+        // Starte neuen Watcher
         Logger.LogDebug("Initializing ShibaBridge FSW on {path}", shibabridgePath);
         ShibaBridgeWatcher = new()
         {
@@ -151,14 +192,19 @@ public sealed class CacheMonitor : DisposableMediatorSubscriberBase
             IncludeSubdirectories = false,
         };
 
+        // Registriere Event-Handler
         ShibaBridgeWatcher.Deleted += ShibaBridgeWatcher_FileChanged;
         ShibaBridgeWatcher.Created += ShibaBridgeWatcher_FileChanged;
         ShibaBridgeWatcher.EnableRaisingEvents = true;
     }
 
+    // Startet den FileSystemWatcher für das Subst-Verzeichnis
     public void StartSubstWatcher(string? substPath)
     {
+        // Dispose des alten Watchers
         SubstWatcher?.Dispose();
+
+        // Prüfe Pfad
         if (string.IsNullOrEmpty(substPath))
         {
             SubstWatcher = null;
@@ -177,6 +223,7 @@ public sealed class CacheMonitor : DisposableMediatorSubscriberBase
             return;
         }
 
+        // Starte neuen Watcher
         Logger.LogDebug("Initializing Subst FSW on {path}", substPath);
         SubstWatcher = new()
         {
@@ -191,42 +238,55 @@ public sealed class CacheMonitor : DisposableMediatorSubscriberBase
             IncludeSubdirectories = false,
         };
 
+        // Registriere Event-Handler
         SubstWatcher.Deleted += SubstWatcher_FileChanged;
         SubstWatcher.Created += SubstWatcher_FileChanged;
         SubstWatcher.EnableRaisingEvents = true;
     }
 
+    // Event-Handler für Dateiänderungen im ShibaBridge Cache
     private void ShibaBridgeWatcher_FileChanged(object sender, FileSystemEventArgs e)
     {
         Logger.LogTrace("ShibaBridge FSW: FileChanged: {change} => {path}", e.ChangeType, e.FullPath);
 
+        // Ignoriere Verzeichnisse
         if (!AllowedFileExtensions.Any(ext => e.FullPath.EndsWith(ext, StringComparison.OrdinalIgnoreCase))) return;
 
+        // Speichere Änderung
         lock (_shibabridgeChanges)
         {
             _shibabridgeChanges[e.FullPath] = new(e.ChangeType);
         }
 
+        // Starte asynchrone Verarbeitung
         _ = ShibaBridgeWatcherExecution();
     }
 
+    // Event-Handler für Dateiänderungen im Subst-Verzeichnis
     private void SubstWatcher_FileChanged(object sender, FileSystemEventArgs e)
     {
         Logger.LogTrace("Subst FSW: FileChanged: {change} => {path}", e.ChangeType, e.FullPath);
 
+        // Ignoriere Verzeichnisse
         if (!AllowedFileExtensions.Any(ext => e.FullPath.EndsWith(ext, StringComparison.OrdinalIgnoreCase))) return;
 
+        // Speichere Änderung
         lock (_substChanges)
         {
             _substChanges[e.FullPath] = new(e.ChangeType);
         }
 
+        // Starte asynchrone Verarbeitung
         _ = SubstWatcherExecution();
     }
 
+    // Startet den FileSystemWatcher für das Penumbra Mod-Verzeichnis
     public void StartPenumbraWatcher(string? penumbraPath)
     {
+        // Dispose des alten Watchers
         PenumbraWatcher?.Dispose();
+
+        // Prüfe Pfad
         if (string.IsNullOrEmpty(penumbraPath))
         {
             PenumbraWatcher = null;
@@ -234,6 +294,7 @@ public sealed class CacheMonitor : DisposableMediatorSubscriberBase
             return;
         }
 
+        // Startem neuen Watcher
         Logger.LogDebug("Initializing Penumbra FSW on {path}", penumbraPath);
         PenumbraWatcher = new()
         {
@@ -248,6 +309,7 @@ public sealed class CacheMonitor : DisposableMediatorSubscriberBase
             IncludeSubdirectories = true
         };
 
+        // Registriere Event-Handler
         PenumbraWatcher.Deleted += Fs_Changed;
         PenumbraWatcher.Created += Fs_Changed;
         PenumbraWatcher.Changed += Fs_Changed;
@@ -255,14 +317,18 @@ public sealed class CacheMonitor : DisposableMediatorSubscriberBase
         PenumbraWatcher.EnableRaisingEvents = true;
     }
 
+    // Event-Handler für Dateiänderungen im Penumbra Mod-Verzeichnis
     private void Fs_Changed(object sender, FileSystemEventArgs e)
     {
+        // Ignoriere Verzeichnisse
         if (Directory.Exists(e.FullPath)) return;
         if (!AllowedFileExtensions.Any(ext => e.FullPath.EndsWith(ext, StringComparison.OrdinalIgnoreCase))) return;
 
+        // Nur auf relevante Änderungen reagieren
         if (e.ChangeType is not (WatcherChangeTypes.Changed or WatcherChangeTypes.Deleted or WatcherChangeTypes.Created))
             return;
 
+        // Speichere Änderung
         lock (_watcherChanges)
         {
             _watcherChanges[e.FullPath] = new(e.ChangeType);
@@ -270,14 +336,20 @@ public sealed class CacheMonitor : DisposableMediatorSubscriberBase
 
         Logger.LogTrace("FSW {event}: {path}", e.ChangeType, e.FullPath);
 
+        // Starte asynchrone Verarbeitung
         _ = PenumbraWatcherExecution();
     }
 
+    // Event-Handler für Umbenennungen im Penumbra Mod-Verzeichnis
     private void Fs_Renamed(object sender, RenamedEventArgs e)
     {
+        // Ignoriere Verzeichnisse
         if (Directory.Exists(e.FullPath))
         {
+            // Falls ein Verzeichnis umbenannt wurde, alle darin enthaltenen Dateien als umbenannt markieren
             var directoryFiles = Directory.GetFiles(e.FullPath, "*.*", SearchOption.AllDirectories);
+
+            // Speichere Änderungen
             lock (_watcherChanges)
             {
                 foreach (var file in directoryFiles)
@@ -294,8 +366,10 @@ public sealed class CacheMonitor : DisposableMediatorSubscriberBase
         }
         else
         {
+            // Einzelne Datei umbenannt
             if (!AllowedFileExtensions.Any(ext => e.FullPath.EndsWith(ext, StringComparison.OrdinalIgnoreCase))) return;
 
+            // Speichere Änderung
             lock (_watcherChanges)
             {
                 _watcherChanges.Remove(e.OldFullPath);
@@ -305,36 +379,56 @@ public sealed class CacheMonitor : DisposableMediatorSubscriberBase
             Logger.LogTrace("FSW Renamed: {path} -> {new}", e.OldFullPath, e.FullPath);
         }
 
+        // Starte asynchrone Verarbeitung
         _ = PenumbraWatcherExecution();
     }
 
+    // CancellationTokenSources für asynchrone Watcher-Verarbeitung
     private CancellationTokenSource _penumbraFswCts = new();
     private CancellationTokenSource _shibabridgeFswCts = new();
     private CancellationTokenSource _substFswCts = new();
+
+    // FileSystemWatcher-Instanzen
     public FileSystemWatcher? PenumbraWatcher { get; private set; }
     public FileSystemWatcher? ShibaBridgeWatcher { get; private set; }
     public FileSystemWatcher? SubstWatcher { get; private set; }
 
+    // Asynchrone Verarbeitung von Änderungen im ShibaBridge Cache
     private async Task ShibaBridgeWatcherExecution()
     {
+        // Abbrechen vorheriger Tasks
         _shibabridgeFswCts = _shibabridgeFswCts.CancelRecreate();
+
+        // Wartezeit und Token
         var token = _shibabridgeFswCts.Token;
         var delay = TimeSpan.FromSeconds(5);
+
+        // Kopiere Änderungen
         Dictionary<string, WatcherChange> changes;
+
+        // Sperre und kopiere Änderungen
         lock (_shibabridgeChanges)
             changes = _shibabridgeChanges.ToDictionary(t => t.Key, t => t.Value, StringComparer.Ordinal);
         try
         {
             do
             {
+                // Wartezeit, bis keine weiteren Änderungen kommen
                 await Task.Delay(delay, token).ConfigureAwait(false);
-            } while (HaltScanLocks.Any(f => f.Value.Value > 0));
+            } 
+            while 
+            (
+                // Warte, bis alle Scan-Sperren aufgehoben sind
+                HaltScanLocks.Any(f => f.Value.Value > 0)
+            );
         }
+        // Abbruch durch neuen Task
         catch (TaskCanceledException)
         {
             return;
         }
 
+        // Entferne verarbeitete Änderungen
         lock (_shibabridgeChanges)
         {
             foreach (var key in changes.Keys)
@@ -343,29 +437,46 @@ public sealed class CacheMonitor : DisposableMediatorSubscriberBase
             }
         }
 
+        // Verarbeite Änderungen
         HandleChanges(changes);
     }
 
+    // Asynchrone Verarbeitung von Änderungen im Subst-Verzeichnis
     private async Task SubstWatcherExecution()
     {
+        // Abbrechen vorheriger Tasks
         _substFswCts = _substFswCts.CancelRecreate();
+
+        // Wartezeit und Token
         var token = _substFswCts.Token;
         var delay = TimeSpan.FromSeconds(5);
+
+        //Kopiere Änderungen
         Dictionary<string, WatcherChange> changes;
+
+        // Sperre und kopiere Änderungen
         lock (_substChanges)
             changes = _substChanges.ToDictionary(t => t.Key, t => t.Value, StringComparer.Ordinal);
         try
         {
             do
             {
+                // Wartezeit, bis keine weiteren Änderungen kommen
                 await Task.Delay(delay, token).ConfigureAwait(false);
-            } while (HaltScanLocks.Any(f => f.Value.Value > 0));
+            } 
+            while 
+            (
+            // Warte, bis alle Scan-Sperren aufgehoben sind
+            HaltScanLocks.Any(f => f.Value.Value > 0)
+            );
         }
+        // Abbruch durch neuen Task
         catch (TaskCanceledException)
         {
             return;
         }
 
+        // Entferne verarbeitete Änderungen
         lock (_substChanges)
         {
             foreach (var key in changes.Keys)
@@ -374,11 +485,14 @@ public sealed class CacheMonitor : DisposableMediatorSubscriberBase
             }
         }
 
+        // Verarbeite Änderungen
         HandleChanges(changes);
     }
 
+    // Vollständiger Scan des ShibaBridge Cache
     public void ClearSubstStorage()
     {
+        // Lösche alle Dateien im Subst-Verzeichnis
         var substDir = _fileDbManager.SubstFolder;
         var allSubstFiles = Directory.GetFiles(substDir, "*.*", SearchOption.TopDirectoryOnly)
                                 .Where(f =>
@@ -398,11 +512,15 @@ public sealed class CacheMonitor : DisposableMediatorSubscriberBase
             {
                 File.Delete(file);
             }
-            catch { }
+            catch 
+            {
+                Logger.LogWarning("Could not delete subst file {file}", file);
+            }
         }
 
         HandleChanges(changes);
 
+        // Re-enable watcher
         if (SubstWatcher != null)
             SubstWatcher.EnableRaisingEvents = true;
     }
