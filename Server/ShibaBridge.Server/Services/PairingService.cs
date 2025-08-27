@@ -1,4 +1,4 @@
-// PairingService - part of ShibaBridge project.
+// Service zur Verwaltung von Spieler-Verknüpfungen.
 using System.Collections.Concurrent;
 using Microsoft.Extensions.Logging;
 using ShibaBridge.Server.Models;
@@ -6,7 +6,9 @@ using ShibaBridge.Server.Models;
 namespace ShibaBridge.Server.Services;
 
 /// <summary>
-/// Handles pairing requests between users. Uses in-memory storage for demo only.
+/// Bearbeitet Kopplungsanfragen zwischen Nutzern.
+/// Für die Demonstration wird nur flüchtiger In-Memory-Speicher verwendet.
+/// Wird vom <see cref="Controllers.PairingController"/> aufgerufen.
 /// </summary>
 public class PairingService
 {

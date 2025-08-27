@@ -1,4 +1,5 @@
-// Program - part of ShibaBridge project.
+// Einstiegspunkt des ShibaBridge-Webservers.
+// Startet eine ASP.NET-Core-Anwendung und richtet alle benötigten Dienste ein.
 using Microsoft.AspNetCore.RateLimiting;
 using ShibaBridge.Server.Hubs;
 using ShibaBridge.Server.Services;
@@ -8,21 +9,22 @@ using Microsoft.Extensions.Logging;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Einfache Konsolen-Logs aktivieren und Mindestloglevel setzen
 builder.Logging.AddSimpleConsole();
 builder.Logging.SetMinimumLevel(LogLevel.Debug);
 
-// Core services
+// Kern-Dienste wie Controller, SignalR-Hubs und Swagger registrieren
 builder.Services.AddControllers();
 builder.Services.AddSignalR().AddMessagePackProtocol();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-// Simple in-memory services for demo purposes
+// Einfache In-Memory-Services für Demonstrationszwecke
 builder.Services.AddSingleton<AuthService>();
 builder.Services.AddSingleton<PairingService>();
 builder.Services.AddSingleton<FileTransferService>();
 
-// Basic rate limiting per remote IP
+// Einfache Ratenbegrenzung pro Remote-IP konfigurieren
 builder.Services.AddRateLimiter(options =>
 {
     options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
@@ -48,7 +50,7 @@ app.UseRateLimiter();
 app.MapControllers();
 app.MapHub<ShibaBridgeHub>(IShibaBridgeHub.Path);
 
-// Health endpoint used by admins or orchestrators
+// Health-Endpoint für Administratoren oder Orchestrierungssysteme
 app.MapGet("/health", () => Results.Ok(new { status = "ok" }));
 
 app.Run();

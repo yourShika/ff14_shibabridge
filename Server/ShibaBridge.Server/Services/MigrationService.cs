@@ -1,11 +1,12 @@
-// MigrationService - part of ShibaBridge project.
+// Platzhalterdienst zur Migration älterer Konten.
 namespace ShibaBridge.Server.Services;
 
 /// <summary>
-/// Placeholder service that would handle migrating legacy Mare or Snowcloak
-/// accounts to the new ShibaBridge identity system.
+/// Platzhalter, der eine Migration von älteren Mare- oder Snowcloak-Konten
+/// auf das neue ShibaBridge-Identitätssystem ermöglichen würde.
 /// </summary>
 public class MigrationService
 {
-    // TODO: Persist legacy mappings and expose admin APIs for triggering migrations.
+    // TODO: Alte Zuordnungen persistent speichern und Admin-APIs zum Auslösen
+    //       der Migration bereitstellen.
 }
