@@ -1,4 +1,4 @@
-// AuthController - part of ShibaBridge project.
+// Controller für Authentifizierungsfunktionen im ShibaBridge-Projekt.
 using Microsoft.AspNetCore.Mvc;
 using ShibaBridge.Server.Models;
 using ShibaBridge.Server.Services;
@@ -9,9 +9,10 @@ using ShibaBridge.API.Dto;
 namespace ShibaBridge.Server.Controllers;
 
 /// <summary>
-/// Einfache API für die Registrierung und Anmeldung von Nutzern.
-/// In einer echten Umgebung würden Anmeldedaten persistent gespeichert
-/// und korrekt validiert werden.
+/// Bietet einfache Endpunkte zur Registrierung und Anmeldung von Nutzern.
+/// Die Daten werden vom <see cref="AuthService"/> lediglich im Arbeitsspeicher
+/// gehalten. In einer produktiven Umgebung müssten sie persistent gespeichert
+/// und sicher validiert werden.
 /// </summary>
 [ApiController]
 [Route("[controller]")]

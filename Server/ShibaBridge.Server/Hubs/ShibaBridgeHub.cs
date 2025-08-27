@@ -1,4 +1,5 @@
-// ShibaBridgeHub - part of ShibaBridge project.
+// SignalR-Hub des ShibaBridge-Projekts.
+// Dient als Platzhalter, damit sich das Plugin während der Entwicklung verbinden kann.
 using System;
 using System.Collections.Generic;
 using Microsoft.AspNetCore.SignalR;
@@ -15,10 +16,11 @@ using ShibaBridge.API.SignalR;
 namespace ShibaBridge.Server.Hubs;
 
 /// <summary>
-/// Stub implementation of the ShibaBridge hub. The methods are provided so
-/// that the plugin can establish a connection during development. Most
-/// methods currently contain placeholder logic and simply return default
-/// values.
+/// Platzhalter-Implementierung des SignalR-Hubs.
+/// Stellt Methoden bereit, damit sich das Plugin während der Entwicklung
+/// verbinden kann. Die meisten Methoden enthalten nur Dummy-Logik und
+/// liefern Standardwerte zurück. Verwendet Datenstrukturen aus dem
+/// <c>ShibaBridge.API</c>-Projekt.
 /// </summary>
 public class ShibaBridgeHub : Hub
 {

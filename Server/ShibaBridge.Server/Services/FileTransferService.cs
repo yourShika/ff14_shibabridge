@@ -1,12 +1,14 @@
-// FileTransferService - part of ShibaBridge project.
+// Service zum Weiterleiten temporärer Dateien.
 using System.Collections.Concurrent;
 using Microsoft.Extensions.Logging;
 
 namespace ShibaBridge.Server.Services;
 
 /// <summary>
-/// In-memory file relay service. Files are stored only until a waiting
-/// download request consumes them. No persistent storage is used.
+/// Vermittelt Dateien ausschließlich im Arbeitsspeicher.
+/// Dateien bleiben nur erhalten, bis eine wartende Download-Anfrage sie abruft.
+/// Es wird kein persistenter Speicher genutzt.
+/// Wird vom <see cref="Controllers.FileController"/> verwendet.
 /// </summary>
 public class FileTransferService
 {
@@ -20,8 +22,8 @@ public class FileTransferService
     }
 
     /// <summary>
-    /// Upload a file and release any pending downloader waiting for the hash.
-    /// Data is kept in memory until a consumer retrieves it or <see cref="DeleteAll"/> is called.
+    /// Lädt eine Datei hoch und entlässt eventuell wartende Downloader für den Hash.
+    /// Die Daten bleiben im Speicher, bis sie abgerufen oder <see cref="DeleteAll"/> aufgerufen wird.
     /// </summary>
     public void Upload(string hash, byte[] data)
     {
@@ -36,8 +38,8 @@ public class FileTransferService
     }
 
     /// <summary>
-    /// Wait for a file with the given hash to be uploaded. If the file was uploaded
-    /// earlier and is still in memory it is returned immediately.
+    /// Wartet auf eine Datei mit dem angegebenen Hash.
+    /// Falls die Datei bereits im Speicher liegt, wird sie sofort zurückgegeben.
     /// </summary>
     public Task<byte[]> WaitForFileAsync(string hash, CancellationToken token)
     {
@@ -58,7 +60,7 @@ public class FileTransferService
     }
 
     /// <summary>
-    /// Determine if a file with the given hash is present in memory and return its size.
+    /// Prüft, ob eine Datei mit dem Hash im Speicher vorhanden ist und liefert deren Größe.
     /// </summary>
     public bool HasFile(string hash, out long size)
     {
@@ -75,7 +77,7 @@ public class FileTransferService
     }
 
     /// <summary>
-    /// Remove all stored files.
+    /// Entfernt alle aktuell gespeicherten Dateien.
     /// </summary>
     public void DeleteAll()
     {

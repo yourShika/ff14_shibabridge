@@ -1,8 +1,9 @@
-// UserIdentity - part of ShibaBridge project.
+// Modell zur Darstellung eines registrierten Nutzers.
 namespace ShibaBridge.Server.Models;
 
 /// <summary>
-/// Represents a registered user on the ShibaBridge server.
-/// Only minimal information is stored for demo purposes.
+/// Repräsentiert einen registrierten Nutzer auf dem ShibaBridge-Server.
+/// Für die Demonstration werden nur minimale Informationen gespeichert.
+/// Wird vom <c>AuthService</c> verwendet.
 /// </summary>
 public record UserIdentity(string Id, string PlayerName, string World);

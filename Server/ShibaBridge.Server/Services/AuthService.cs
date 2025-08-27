@@ -1,4 +1,4 @@
-// AuthService - part of ShibaBridge project.
+// Einfacher Authentifizierungsdienst für ShibaBridge.
 using System.Collections.Concurrent;
 using Microsoft.Extensions.Logging;
 using ShibaBridge.Server.Models;
@@ -6,8 +6,9 @@ using ShibaBridge.Server.Models;
 namespace ShibaBridge.Server.Services;
 
 /// <summary>
-/// Very small in-memory authentication service.
-/// Real implementations would persist data and issue proper JWTs.
+/// Minimaler Authentifizierungsdienst, der Nutzer im Arbeitsspeicher verwaltet.
+/// Reale Implementierungen würden Daten persistent speichern und echte JWTs
+/// ausstellen. Wird von <see cref="Controllers.AuthController"/> genutzt.
 /// </summary>
 public class AuthService
 {
@@ -30,7 +31,7 @@ public class AuthService
 
     public LoginResponse Login(LoginRequest request)
     {
-        // Placeholder: in reality the API key would be validated and a JWT issued
+        // Platzhalter: In Wirklichkeit würde der API-Schlüssel validiert und ein JWT erstellt
         _logger.LogInformation("Login requested with API key {ApiKey}", request.ApiKey);
         return new LoginResponse(Convert.ToBase64String(Guid.NewGuid().ToByteArray()));
     }

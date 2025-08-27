@@ -1,4 +1,4 @@
-// FileController - part of ShibaBridge project.
+// Controller für den temporären Dateiaustausch zwischen gekoppelten Clients.
 using Microsoft.AspNetCore.Mvc;
 using ShibaBridge.API.Dto.Files;
 using ShibaBridge.API.Routes;
@@ -10,10 +10,10 @@ using Microsoft.Extensions.Logging;
 namespace ShibaBridge.Server.Controllers;
 
 /// <summary>
-/// Endpoints for transient file transfer between paired clients. Files are
-/// only kept in memory until a waiting client downloads them.
-/// Routes are aligned with <see cref="ShibaBridgeFiles"/> so the plugin can
-/// interact with this server implementation.
+/// Bietet Endpunkte für den kurzzeitigen Datentransfer zwischen gekoppelten
+/// Clients. Dateien werden nur im Speicher gehalten, bis ein wartender Client
+/// sie abruft. Die Routen orientieren sich an <see cref="ShibaBridgeFiles"/>,
+/// sodass das Plugin mit dieser Server-Implementierung interagieren kann.
 /// </summary>
 [ApiController]
 [Route(ShibaBridgeFiles.ServerFiles)]
@@ -29,8 +29,9 @@ public class FileController : ControllerBase
     }
 
     /// <summary>
-    /// Uploads a compressed file for the specified hash. The content is kept in
-    /// memory only until a client requests it via <see cref="Download"/>.
+    /// Lädt eine komprimierte Datei für den angegebenen Hash hoch.
+    /// Der Inhalt verbleibt im Speicher, bis ein Client sie über
+    /// <see cref="Download"/> anfordert.
     /// </summary>
     [HttpPost(ShibaBridgeFiles.ServerFiles_Upload + "/{hash}")]
     public async Task<IActionResult> Upload(string hash)
@@ -43,7 +44,8 @@ public class FileController : ControllerBase
     }
 
     /// <summary>
-    /// Accepts a list of hashes and returns which files the server requires.
+    /// Nimmt eine Liste von Hashes entgegen und gibt zurück, welche Dateien
+    /// der Server benötigt.
     /// </summary>
     [HttpPost(ShibaBridgeFiles.ServerFiles_FilesSend)]
     public ActionResult<List<UploadFileDto>> FilesSend([FromBody] FilesSendDto dto)
@@ -62,7 +64,8 @@ public class FileController : ControllerBase
     }
 
     /// <summary>
-    /// Returns information about which of the requested files are available on the server.
+    /// Gibt Informationen darüber zurück, welche der angefragten Dateien auf
+    /// dem Server verfügbar sind.
     /// </summary>
     [HttpGet(ShibaBridgeFiles.ServerFiles_GetSizes)]
     public ActionResult<List<DownloadFileDto>> GetSizes([FromBody] List<string> hashes)
@@ -85,7 +88,7 @@ public class FileController : ControllerBase
     }
 
     /// <summary>
-    /// Clears all currently stored files.
+    /// Löscht alle derzeit gespeicherten Dateien.
     /// </summary>
     [HttpPost(ShibaBridgeFiles.ServerFiles_DeleteAll)]
     public IActionResult DeleteAll()
@@ -96,8 +99,8 @@ public class FileController : ControllerBase
     }
 
     /// <summary>
-    /// Waits for a compressed file with the given hash to be uploaded and then
-    /// streams it to the caller.
+    /// Wartet auf eine hochgeladene komprimierte Datei mit dem angegebenen
+    /// Hash und streamt sie anschließend an den Aufrufer.
     /// </summary>
     [HttpGet("download/{hash}")]
     public async Task<IActionResult> Download(string hash, CancellationToken cancellationToken)
