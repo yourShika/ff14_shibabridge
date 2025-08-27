@@ -1,3 +1,4 @@
+// FileCompactor - part of ShibaBridge project.
 ﻿using ShibaBridge.ShibaBridgeConfiguration;
 using ShibaBridge.Services;
 using Microsoft.Extensions.Logging;

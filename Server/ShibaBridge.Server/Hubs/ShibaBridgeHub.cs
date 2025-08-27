@@ -1,3 +1,4 @@
+// ShibaBridgeHub - part of ShibaBridge project.
 using System;
 using System.Collections.Generic;
 using Microsoft.AspNetCore.SignalR;

@@ -1,3 +1,4 @@
+// UiFactory - part of ShibaBridge project.
 ﻿using ShibaBridge.API.Dto.Group;
 using ShibaBridge.PlayerData.Pairs;
 using ShibaBridge.Services.Mediator;

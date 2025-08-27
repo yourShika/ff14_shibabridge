@@ -1,3 +1,4 @@
+// ServerStorage - part of ShibaBridge project.
 ﻿namespace ShibaBridge.ShibaBridgeConfiguration.Models;
 
 [Serializable]

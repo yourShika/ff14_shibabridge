@@ -1,3 +1,4 @@
+// Messages - part of ShibaBridge project.
 ﻿using Dalamud.Game.ClientState.Objects.Types;
 using ShibaBridge.API.Data;
 using ShibaBridge.API.Dto;

@@ -1,3 +1,4 @@
+// CharaDataNearbyManager - part of ShibaBridge project.
 ﻿using FFXIVClientStructs.FFXIV.Client.Graphics.Scene;
 using ShibaBridge.API.Data;
 using ShibaBridge.Interop;

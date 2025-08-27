@@ -1,3 +1,4 @@
+// AccountRegistrationService - part of ShibaBridge project.
 using ShibaBridge.API.Dto.Account;
 using ShibaBridge.API.Routes;
 using ShibaBridge.Services;

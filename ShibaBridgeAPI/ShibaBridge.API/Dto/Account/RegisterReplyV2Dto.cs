@@ -1,3 +1,4 @@
+// RegisterReplyV2Dto - part of ShibaBridge project.
 using MessagePack;
 
 namespace ShibaBridge.API.Dto.Account;

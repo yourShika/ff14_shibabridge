@@ -1,3 +1,4 @@
+// FileDownloadStatus - part of ShibaBridge project.
 ﻿namespace ShibaBridge.WebAPI.Files.Models;
 
 public class FileDownloadStatus

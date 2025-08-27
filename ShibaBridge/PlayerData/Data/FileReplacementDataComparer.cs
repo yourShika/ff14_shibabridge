@@ -1,3 +1,4 @@
+// FileReplacementDataComparer - part of ShibaBridge project.
 ﻿using ShibaBridge.API.Data;
 
 namespace ShibaBridge.PlayerData.Data;

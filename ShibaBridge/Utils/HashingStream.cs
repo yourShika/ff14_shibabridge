@@ -1,3 +1,4 @@
+// HashingStream - part of ShibaBridge project.
 using System.Security.Cryptography;
 
 namespace ShibaBridge.Utils;

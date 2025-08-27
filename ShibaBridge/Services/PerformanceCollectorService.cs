@@ -1,3 +1,4 @@
+// PerformanceCollectorService - part of ShibaBridge project.
 ﻿using ShibaBridge.ShibaBridgeConfiguration;
 using ShibaBridge.Utils;
 using Microsoft.Extensions.Hosting;

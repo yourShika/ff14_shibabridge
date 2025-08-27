@@ -1,3 +1,4 @@
+// ShibaBridgeInterpolatedStringHandler - part of ShibaBridge project.
 ﻿using System.Runtime.CompilerServices;
 using System.Text;
 

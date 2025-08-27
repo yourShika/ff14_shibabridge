@@ -1,3 +1,4 @@
+// FileController - part of ShibaBridge project.
 using Microsoft.AspNetCore.Mvc;
 using ShibaBridge.API.Dto.Files;
 using ShibaBridge.API.Routes;

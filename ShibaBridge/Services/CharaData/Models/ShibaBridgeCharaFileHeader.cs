@@ -1,3 +1,4 @@
+// ShibaBridgeCharaFileHeader - part of ShibaBridge project.
 ﻿namespace ShibaBridge.Services.CharaData.Models;
 
 public record ShibaBridgeCharaFileHeader(byte Version, ShibaBridgeCharaFileData CharaFileData)

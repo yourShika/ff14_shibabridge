@@ -1,3 +1,4 @@
+// GroupUserPermissions - part of ShibaBridge project.
 ﻿namespace ShibaBridge.API.Data.Enum;
 
 [Flags]

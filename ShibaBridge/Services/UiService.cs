@@ -1,3 +1,4 @@
+// UiService - part of ShibaBridge project.
 ﻿using Dalamud.Interface;
 using Dalamud.Interface.ImGuiFileDialog;
 using Dalamud.Interface.Windowing;

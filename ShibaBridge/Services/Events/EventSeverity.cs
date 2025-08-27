@@ -1,3 +1,4 @@
+// EventSeverity - part of ShibaBridge project.
 ﻿namespace ShibaBridge.Services.Events;
 
 public enum EventSeverity

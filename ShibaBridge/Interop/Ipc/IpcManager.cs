@@ -1,3 +1,4 @@
+// IpcManager - part of ShibaBridge project.
 ﻿using ShibaBridge.Services.Mediator;
 using Microsoft.Extensions.Logging;
 

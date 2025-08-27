@@ -1,3 +1,4 @@
+// CharaDataExtendedUpdateDto - part of ShibaBridge project.
 ﻿using ShibaBridge.API.Data;
 using ShibaBridge.API.Dto.CharaData;
 

@@ -1,3 +1,4 @@
+// NotesConfigService - part of ShibaBridge project.
 ﻿using ShibaBridge.ShibaBridgeConfiguration.Configurations;
 
 namespace ShibaBridge.ShibaBridgeConfiguration;

@@ -1,3 +1,4 @@
+// DrawPairBase - part of ShibaBridge project.
 ﻿using Dalamud.Bindings.ImGui;
 using Dalamud.Interface;
 using ShibaBridge.PlayerData.Pairs;

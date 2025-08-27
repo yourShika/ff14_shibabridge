@@ -1,3 +1,4 @@
+// SettingsUi - part of ShibaBridge project.
 ﻿using Dalamud.Bindings.ImGui;
 using Dalamud.Game.Text;
 using Dalamud.Interface;

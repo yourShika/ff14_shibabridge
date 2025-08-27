@@ -1,3 +1,4 @@
+// HubConnectionConfig - part of ShibaBridge project.
 using Microsoft.AspNetCore.Http.Connections;
 using System.Text.Json.Serialization;
 

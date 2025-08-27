@@ -1,3 +1,4 @@
+// PngHdr - part of ShibaBridge project.
 namespace ShibaBridge.Utils;
 
 public class PngHdr

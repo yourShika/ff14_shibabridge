@@ -1,3 +1,4 @@
+// ChatMessage - part of ShibaBridge project.
 using MessagePack;
 
 namespace ShibaBridge.API.Data;

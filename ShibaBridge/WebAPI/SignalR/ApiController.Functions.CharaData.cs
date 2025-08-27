@@ -1,3 +1,4 @@
+// ApiController.Functions.CharaData - part of ShibaBridge project.
 ﻿using ShibaBridge.API.Data;
 using ShibaBridge.API.Dto.CharaData;
 using Microsoft.AspNetCore.SignalR.Client;

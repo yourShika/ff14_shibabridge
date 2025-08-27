@@ -1,3 +1,4 @@
+// Plugin - part of ShibaBridge project.
 ﻿using Dalamud.Game.ClientState.Objects;
 using Dalamud.Interface.ImGuiFileDialog;
 using Dalamud.Interface.Windowing;

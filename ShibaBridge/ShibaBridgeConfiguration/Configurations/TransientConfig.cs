@@ -1,3 +1,4 @@
+// TransientConfig - part of ShibaBridge project.
 ﻿namespace ShibaBridge.ShibaBridgeConfiguration.Configurations;
 
 public class TransientConfig : IShibaBridgeConfiguration

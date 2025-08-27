@@ -1,3 +1,4 @@
+// DownloadUi - part of ShibaBridge project.
 ﻿using Dalamud.Bindings.ImGui;
 using Dalamud.Interface.Colors;
 using ShibaBridge.ShibaBridgeConfiguration;

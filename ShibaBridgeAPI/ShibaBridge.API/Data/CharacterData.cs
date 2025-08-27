@@ -1,3 +1,4 @@
+// CharacterData - part of ShibaBridge project.
 ﻿using ShibaBridge.API.Data.Enum;
 using MessagePack;
 using System.Text.Json.Serialization;

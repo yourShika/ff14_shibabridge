@@ -1,3 +1,4 @@
+// XivDataAnalyzer - part of ShibaBridge project.
 using FFXIVClientStructs.FFXIV.Client.Game.Character;
 using FFXIVClientStructs.FFXIV.Client.Graphics.Scene;
 using FFXIVClientStructs.Havok.Animation;

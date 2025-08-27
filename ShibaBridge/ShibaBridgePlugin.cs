@@ -1,4 +1,5 @@
-﻿using ShibaBridge.FileCache;
+// ShibaBridgePlugin - part of ShibaBridge project.
+using ShibaBridge.FileCache;
 using ShibaBridge.ShibaBridgeConfiguration;
 using ShibaBridge.PlayerData.Pairs;
 using ShibaBridge.PlayerData.Services;
@@ -12,15 +13,30 @@ using System.Reflection;
 
 namespace ShibaBridge;
 
+/// <summary>
+///     Main entry point for the plugin. Handles startup, shutdown and
+///     initialization of all runtime services. The plugin is hosted as a
+///     background service and subscribes to events through the mediator
+///     base class.
+/// </summary>
 public class ShibaBridgePlugin : MediatorSubscriberBase, IHostedService
 {
+    // Services that are injected by the host and used throughout the plugin
     private readonly DalamudUtilService _dalamudUtil;
     private readonly ShibaBridgeConfigService _shibabridgeConfigService;
     private readonly ServerConfigurationManager _serverConfigurationManager;
     private readonly IServiceScopeFactory _serviceScopeFactory;
+
+    // Runtime scope that contains services only required after login
     private IServiceScope? _runtimeServiceScope;
+
+    // Task used to delay the launch until the player is available
     private Task? _launchTask = null;
 
+    /// <summary>
+    ///     Constructor wires up all required services and stores references for
+    ///     later use.
+    /// </summary>
     public ShibaBridgePlugin(ILogger<ShibaBridgePlugin> logger, ShibaBridgeConfigService shibabridgeConfigService,
         ServerConfigurationManager serverConfigurationManager,
         DalamudUtilService dalamudUtil,
@@ -32,6 +48,10 @@ public class ShibaBridgePlugin : MediatorSubscriberBase, IHostedService
         _serviceScopeFactory = serviceScopeFactory;
     }
 
+    /// <summary>
+    ///     Called by the host when the plugin is starting. Registers event
+    ///     handlers and kicks off background processing.
+    /// </summary>
     public Task StartAsync(CancellationToken cancellationToken)
     {
         var version = Assembly.GetExecutingAssembly().GetName().Version!;
@@ -39,6 +59,8 @@ public class ShibaBridgePlugin : MediatorSubscriberBase, IHostedService
         Mediator.Publish(new EventMessage(new Services.Events.Event(nameof(ShibaBridgePlugin), Services.Events.EventSeverity.Informational,
             $"Starting ShibaBridge Sync {version.Major}.{version.Minor}.{version.Build}.{version.Revision}")));
 
+        // Begin listening for Dalamud events. When they fire we may need to
+        // create the runtime service scope.
         Mediator.Subscribe<SwitchToMainUiMessage>(this, (msg) => { if (_launchTask == null || _launchTask.IsCompleted) _launchTask = Task.Run(WaitForPlayerAndLaunchCharacterManager); });
         Mediator.Subscribe<DalamudLoginMessage>(this, (_) => DalamudUtilOnLogIn());
         Mediator.Subscribe<DalamudLogoutMessage>(this, (_) => DalamudUtilOnLogOut());
@@ -48,6 +70,10 @@ public class ShibaBridgePlugin : MediatorSubscriberBase, IHostedService
         return Task.CompletedTask;
     }
 
+    /// <summary>
+    ///     Called by the host when the plugin is stopping. Cleans up all
+    ///     subscriptions and disposes the runtime scope.
+    /// </summary>
     public Task StopAsync(CancellationToken cancellationToken)
     {
         UnsubscribeAll();
@@ -59,12 +85,18 @@ public class ShibaBridgePlugin : MediatorSubscriberBase, IHostedService
         return Task.CompletedTask;
     }
 
+    /// <summary>
+    ///     Triggers service launch after the game client signals a login.
+    /// </summary>
     private void DalamudUtilOnLogIn()
     {
         Logger?.LogDebug("Client login");
         if (_launchTask == null || _launchTask.IsCompleted) _launchTask = Task.Run(WaitForPlayerAndLaunchCharacterManager);
     }
 
+    /// <summary>
+    ///     Disposes the runtime scope when the player logs out.
+    /// </summary>
     private void DalamudUtilOnLogOut()
     {
         Logger?.LogDebug("Client logout");
@@ -72,6 +104,11 @@ public class ShibaBridgePlugin : MediatorSubscriberBase, IHostedService
         _runtimeServiceScope?.Dispose();
     }
 
+    /// <summary>
+    ///     Waits until the player is fully present in the world and then
+    ///     resolves all required runtime services. This method is executed on a
+    ///     background thread to avoid blocking the caller.
+    /// </summary>
     private async Task WaitForPlayerAndLaunchCharacterManager()
     {
         while (!await _dalamudUtil.GetIsPlayerPresentAsync().ConfigureAwait(false))

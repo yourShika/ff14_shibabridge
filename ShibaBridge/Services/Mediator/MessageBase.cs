@@ -1,3 +1,4 @@
+// MessageBase - part of ShibaBridge project.
 ﻿namespace ShibaBridge.Services.Mediator;
 
 #pragma warning disable MA0048

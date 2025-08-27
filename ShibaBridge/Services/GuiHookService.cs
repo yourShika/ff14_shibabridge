@@ -1,3 +1,4 @@
+// GuiHookService - part of ShibaBridge project.
 using Dalamud.Game.Gui.NamePlate;
 using Dalamud.Game.Text.SeStringHandling;
 using Dalamud.Game.Text.SeStringHandling.Payloads;

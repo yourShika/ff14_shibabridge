@@ -1,3 +1,4 @@
+// ValueProgress - part of ShibaBridge project.
 ﻿namespace ShibaBridge.Utils;
 
 public class ValueProgress<T> : Progress<T>

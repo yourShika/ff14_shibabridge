@@ -1,3 +1,4 @@
+// CharaDataManager - part of ShibaBridge project.
 ﻿using Dalamud.Game.ClientState.Objects.Types;
 using K4os.Compression.LZ4.Legacy;
 using ShibaBridge.API.Data;

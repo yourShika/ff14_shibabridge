@@ -1,3 +1,4 @@
+// ShibaBridgeMediator - part of ShibaBridge project.
 ﻿using ShibaBridge.ShibaBridgeConfiguration;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;

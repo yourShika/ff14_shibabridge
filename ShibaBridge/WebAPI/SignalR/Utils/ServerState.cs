@@ -1,3 +1,4 @@
+// ServerState - part of ShibaBridge project.
 ﻿namespace ShibaBridge.WebAPI.SignalR.Utils;
 
 public enum ServerState

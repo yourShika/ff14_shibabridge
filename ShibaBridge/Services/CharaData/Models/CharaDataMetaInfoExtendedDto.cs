@@ -1,3 +1,4 @@
+// CharaDataMetaInfoExtendedDto - part of ShibaBridge project.
 ﻿using ShibaBridge.API.Dto.CharaData;
 
 namespace ShibaBridge.Services.CharaData.Models;

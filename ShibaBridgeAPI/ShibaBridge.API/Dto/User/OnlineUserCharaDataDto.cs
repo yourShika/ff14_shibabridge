@@ -1,3 +1,4 @@
+// OnlineUserCharaDataDto - part of ShibaBridge project.
 ﻿using ShibaBridge.API.Data;
 using MessagePack;
 

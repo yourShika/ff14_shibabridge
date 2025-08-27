@@ -1,3 +1,4 @@
+// ITransferFileDto - part of ShibaBridge project.
 ﻿namespace ShibaBridge.API.Dto.Files;
 
 public interface ITransferFileDto

@@ -1,3 +1,4 @@
+// PluginWarningNotificationService - part of ShibaBridge project.
 ﻿using ShibaBridge.API.Data;
 using ShibaBridge.API.Data.Comparer;
 using ShibaBridge.Interop.Ipc;

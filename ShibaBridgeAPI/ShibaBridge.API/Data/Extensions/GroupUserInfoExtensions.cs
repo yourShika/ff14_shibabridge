@@ -1,3 +1,4 @@
+// GroupUserInfoExtensions - part of ShibaBridge project.
 ﻿using ShibaBridge.API.Data.Enum;
 
 namespace ShibaBridge.API.Data.Extensions;

@@ -1,3 +1,4 @@
+// ProgressableStreamContent - part of ShibaBridge project.
 ﻿using System.Net;
 
 namespace ShibaBridge.WebAPI.Files.Models;

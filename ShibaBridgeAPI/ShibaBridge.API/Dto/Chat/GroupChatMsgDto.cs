@@ -1,3 +1,4 @@
+// GroupChatMsgDto - part of ShibaBridge project.
 using ShibaBridge.API.Data;
 using ShibaBridge.API.Dto.Group;
 using ShibaBridge.API.Dto.User;

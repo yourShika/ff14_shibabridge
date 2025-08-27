@@ -1,3 +1,4 @@
+// FileDownloadManagerFactory - part of ShibaBridge project.
 ﻿using ShibaBridge.FileCache;
 using ShibaBridge.Services.Mediator;
 using ShibaBridge.WebAPI.Files;

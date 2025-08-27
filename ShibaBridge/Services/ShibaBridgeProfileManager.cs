@@ -1,3 +1,4 @@
+// ShibaBridgeProfileManager - part of ShibaBridge project.
 ﻿using ShibaBridge.API.Data;
 using ShibaBridge.API.Data.Comparer;
 using ShibaBridge.ShibaBridgeConfiguration;

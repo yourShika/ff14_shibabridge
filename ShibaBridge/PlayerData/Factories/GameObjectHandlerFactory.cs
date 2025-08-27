@@ -1,3 +1,4 @@
+// GameObjectHandlerFactory - part of ShibaBridge project.
 ﻿using ShibaBridge.API.Data.Enum;
 using ShibaBridge.PlayerData.Handlers;
 using ShibaBridge.Services;

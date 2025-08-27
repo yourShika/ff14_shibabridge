@@ -1,3 +1,4 @@
+// AuthService - part of ShibaBridge project.
 using System.Collections.Concurrent;
 using Microsoft.Extensions.Logging;
 using ShibaBridge.Server.Models;

@@ -1,3 +1,4 @@
+// AuthController - part of ShibaBridge project.
 using Microsoft.AspNetCore.Mvc;
 using ShibaBridge.Server.Models;
 using ShibaBridge.Server.Services;
@@ -8,8 +9,9 @@ using ShibaBridge.API.Dto;
 namespace ShibaBridge.Server.Controllers;
 
 /// <summary>
-/// Simple controller handling user registration and login.
-/// In a real deployment credentials would be persisted and validated.
+/// Einfache API für die Registrierung und Anmeldung von Nutzern.
+/// In einer echten Umgebung würden Anmeldedaten persistent gespeichert
+/// und korrekt validiert werden.
 /// </summary>
 [ApiController]
 [Route("[controller]")]
@@ -23,6 +25,8 @@ public class AuthController : ControllerBase
     }
 
     [HttpPost("register")]
+    // Legt einen neuen Benutzer an und gibt dessen Identität zurück.
+    // Die Daten werden aktuell nur im Arbeitsspeicher verwaltet.
     public ActionResult<UserIdentity> Register(RegisterRequest request, [FromServices] AuthService service)
     {
         _logger.LogInformation("Register requested for {Player} from {World}", request.PlayerName, request.World);
@@ -30,6 +34,7 @@ public class AuthController : ControllerBase
     }
 
     [HttpPost("login")]
+    // Meldet einen Benutzer mit seinem API-Schlüssel an und liefert ein Login-Token zurück.
     public ActionResult<LoginResponse> Login(LoginRequest request, [FromServices] AuthService service)
     {
         _logger.LogInformation("Login attempt with API key {ApiKey}", request.ApiKey);
@@ -37,6 +42,8 @@ public class AuthController : ControllerBase
     }
 
     [HttpPost("registerNewKeyV2")]
+    // Erstellt einen neuen Benutzer über einen gehashten Geheimschlüssel.
+    // Diese Variante wird vom Plugin genutzt, um ein Konto ohne Benutzername zu erzeugen.
     public ActionResult<RegisterReplyV2Dto> RegisterNewKeyV2([FromForm] string hashedSecretKey, [FromServices] AuthService service)
     {
         _logger.LogInformation("registerNewKeyV2 requested");
@@ -45,6 +52,8 @@ public class AuthController : ControllerBase
     }
 
     [HttpPost("createWithIdentV2")]
+    // Erstellt einen API-Token anhand eines gehashten Schlüssels und
+    // einer Charakter-Identifikation. Dient dem automatischen Login aus dem Spiel.
     public ActionResult<AuthReplyDto> CreateWithIdentV2([FromForm] string auth, [FromForm] string charaIdent, [FromServices] AuthService service)
     {
         _logger.LogInformation("createWithIdentV2 requested for {Chara}", charaIdent);

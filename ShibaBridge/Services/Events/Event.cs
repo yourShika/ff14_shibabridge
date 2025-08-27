@@ -1,3 +1,4 @@
+// Event - part of ShibaBridge project.
 ﻿using ShibaBridge.API.Data;
 
 namespace ShibaBridge.Services.Events;

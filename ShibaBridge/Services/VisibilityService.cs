@@ -1,3 +1,4 @@
+// VisibilityService - part of ShibaBridge project.
 using ShibaBridge.Interop.Ipc;
 using ShibaBridge.Services.Mediator;
 using Microsoft.Extensions.Logging;

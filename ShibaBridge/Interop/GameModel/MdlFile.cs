@@ -1,3 +1,4 @@
+// MdlFile - part of ShibaBridge project.
 using Lumina.Data;
 using Lumina.Extensions;
 using System.Runtime.InteropServices;

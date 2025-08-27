@@ -1,3 +1,4 @@
+// CharaDataFileHandler - part of ShibaBridge project.
 ﻿using Dalamud.Game.ClientState.Objects.SubKinds;
 using K4os.Compression.LZ4.Legacy;
 using ShibaBridge.API.Data;

@@ -1,3 +1,4 @@
+// TagHandler - part of ShibaBridge project.
 ﻿using ShibaBridge.Services.ServerConfiguration;
 
 namespace ShibaBridge.UI.Handlers;

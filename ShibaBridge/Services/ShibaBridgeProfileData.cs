@@ -1,3 +1,4 @@
+// ShibaBridgeProfileData - part of ShibaBridge project.
 ﻿namespace ShibaBridge.Services;
 
 public record ShibaBridgeProfileData(bool IsFlagged, bool IsNSFW, string Base64ProfilePicture, string Description)

@@ -1,3 +1,4 @@
+// TransientResourceManager - part of ShibaBridge project.
 ﻿using ShibaBridge.API.Data.Enum;
 using ShibaBridge.ShibaBridgeConfiguration;
 using ShibaBridge.PlayerData.Data;

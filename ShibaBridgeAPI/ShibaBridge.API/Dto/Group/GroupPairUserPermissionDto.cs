@@ -1,3 +1,4 @@
+// GroupPairUserPermissionDto - part of ShibaBridge project.
 ﻿using ShibaBridge.API.Data;
 using ShibaBridge.API.Data.Enum;
 using MessagePack;

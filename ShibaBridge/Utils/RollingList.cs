@@ -1,3 +1,4 @@
+// RollingList - part of ShibaBridge project.
 ﻿using System.Collections;
 
 namespace ShibaBridge.Utils;
