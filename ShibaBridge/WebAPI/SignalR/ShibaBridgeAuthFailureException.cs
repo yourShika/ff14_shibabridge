@@ -1,3 +1,4 @@
+// ShibaBridgeAuthFailureException - part of ShibaBridge project.
 ﻿namespace ShibaBridge.WebAPI.SignalR;
 
 public class ShibaBridgeAuthFailureException : Exception

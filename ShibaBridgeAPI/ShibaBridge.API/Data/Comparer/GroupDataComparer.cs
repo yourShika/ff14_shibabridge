@@ -1,3 +1,4 @@
+// GroupDataComparer - part of ShibaBridge project.
 ﻿namespace ShibaBridge.API.Data.Comparer;
 
 public class GroupDataComparer : IEqualityComparer<GroupData>

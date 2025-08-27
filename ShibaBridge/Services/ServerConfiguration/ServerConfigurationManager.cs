@@ -1,3 +1,4 @@
+// ServerConfigurationManager - part of ShibaBridge project.
 ﻿using ShibaBridge.ShibaBridgeConfiguration;
 using ShibaBridge.ShibaBridgeConfiguration.Models;
 using ShibaBridge.Services.Mediator;

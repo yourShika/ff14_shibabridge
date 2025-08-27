@@ -1,3 +1,4 @@
+// PluginWatcherService - part of ShibaBridge project.
 using Dalamud.Plugin;
 using ShibaBridge.Services.Mediator;
 using Microsoft.Extensions.Hosting;

@@ -1,3 +1,4 @@
+// XivDataStorageConfig - part of ShibaBridge project.
 ﻿using System.Collections.Concurrent;
 
 namespace ShibaBridge.ShibaBridgeConfiguration.Configurations;

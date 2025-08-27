@@ -1,3 +1,4 @@
+// FileReplacementData - part of ShibaBridge project.
 ﻿using MessagePack;
 using System.Text.Json.Serialization;
 using System.Text.Json;

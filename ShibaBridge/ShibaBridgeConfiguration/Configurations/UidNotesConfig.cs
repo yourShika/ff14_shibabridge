@@ -1,3 +1,4 @@
+// UidNotesConfig - part of ShibaBridge project.
 ﻿using ShibaBridge.ShibaBridgeConfiguration.Models;
 
 namespace ShibaBridge.ShibaBridgeConfiguration.Configurations;

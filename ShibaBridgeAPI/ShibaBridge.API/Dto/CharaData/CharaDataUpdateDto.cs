@@ -1,3 +1,4 @@
+// CharaDataUpdateDto - part of ShibaBridge project.
 ﻿using MessagePack;
 
 namespace ShibaBridge.API.Dto.CharaData;

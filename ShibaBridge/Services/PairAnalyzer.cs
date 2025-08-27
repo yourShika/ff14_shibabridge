@@ -1,3 +1,4 @@
+// PairAnalyzer - part of ShibaBridge project.
 ﻿using ShibaBridge.API.Data;
 using ShibaBridge.API.Data.Enum;
 using ShibaBridge.FileCache;
@@ -11,10 +12,15 @@ namespace ShibaBridge.Services;
 
 public sealed class PairAnalyzer : DisposableMediatorSubscriberBase
 {
+    // Verweist auf den lokalen Dateicache, um Mod-Dateien nachzuschlagen.
     private readonly FileCacheManager _fileCacheManager;
+    // Hilfsklasse zum Auslesen von Polygonzahlen aus Modelldateien.
     private readonly XivDataAnalyzer _xivDataAnalyzer;
+    // Tokenquelle, falls eine laufende Analyse abgebrochen werden soll.
     private CancellationTokenSource? _analysisCts;
+    // Basis-Token für die Grundanalyse, die bei Datenänderungen neu gestartet wird.
     private CancellationTokenSource _baseAnalysisCts = new();
+    // Speichert die Hash-Summe der zuletzt untersuchten Daten, um doppelte Arbeit zu vermeiden.
     private string _lastDataHash = string.Empty;
 
     public PairAnalyzer(ILogger<PairAnalyzer> logger, Pair pair, ShibaBridgeMediator mediator, FileCacheManager fileCacheManager, XivDataAnalyzer modelAnalyzer)
@@ -54,12 +60,19 @@ public sealed class PairAnalyzer : DisposableMediatorSubscriberBase
     internal Dictionary<ObjectKind, Dictionary<string, CharacterAnalyzer.FileDataEntry>> LastAnalysis { get; } = [];
     internal string LastPlayerName { get; set; } = string.Empty;
 
+    /// <summary>
+    /// Bricht eine laufende Analyse ab und setzt den Status zurück.
+    /// </summary>
     public void CancelAnalyze()
     {
         _analysisCts?.CancelDispose();
         _analysisCts = null;
     }
 
+    /// <summary>
+    /// Berechnet die Dateigrößen und Polygonzahlen aller aktuell bekannten Dateien.
+    /// Optional kann die Analyse neu berechnet und anschließend ausgegeben werden.
+    /// </summary>
     public async Task ComputeAnalysis(bool print = true, bool recalculate = false)
     {
         Logger.LogDebug("=== Calculating Character Analysis ===");
@@ -118,6 +131,10 @@ public sealed class PairAnalyzer : DisposableMediatorSubscriberBase
         _baseAnalysisCts.CancelDispose();
     }
 
+    /// <summary>
+    /// Zerlegt die Charakterdaten in einzelne Dateien und sammelt Basisinformationen,
+    /// wie Dateipfade und Dateigrößen. Wird bei jeder Datenänderung einmalig ausgeführt.
+    /// </summary>
     private async Task BaseAnalysis(CharacterData charaData, CancellationToken token)
     {
         if (string.Equals(charaData.DataHash.Value, _lastDataHash, StringComparison.Ordinal)) return;
@@ -167,6 +184,10 @@ public sealed class PairAnalyzer : DisposableMediatorSubscriberBase
         _lastDataHash = charaData.DataHash.Value;
     }
 
+    /// <summary>
+    /// Gibt die Ergebnisse der letzten Analyse im Log aus. Es werden
+    /// sowohl Details pro Datei als auch Zusammenfassungen ausgegeben.
+    /// </summary>
     private void PrintAnalysis()
     {
         if (LastAnalysis.Count == 0) return;

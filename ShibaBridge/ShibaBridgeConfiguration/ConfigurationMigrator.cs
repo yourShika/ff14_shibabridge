@@ -1,3 +1,4 @@
+// ConfigurationMigrator - part of ShibaBridge project.
 ﻿using ShibaBridge.WebAPI;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;

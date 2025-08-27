@@ -1,3 +1,4 @@
+// WindowMediatorSubscriberBase - part of ShibaBridge project.
 ﻿using Dalamud.Interface.Windowing;
 using Microsoft.Extensions.Logging;
 

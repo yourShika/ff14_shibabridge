@@ -1,3 +1,4 @@
+// NoSnapService - part of ShibaBridge project.
 using Dalamud.Plugin;
 using ShibaBridge.Interop.Ipc;
 using ShibaBridge.ShibaBridgeConfiguration.Models;

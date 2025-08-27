@@ -1,3 +1,4 @@
+// CharaDataDto - part of ShibaBridge project.
 ﻿using ShibaBridge.API.Data;
 
 namespace ShibaBridge.API.Dto.CharaData;

@@ -1,3 +1,4 @@
+// ShibaBridgeAuth - part of ShibaBridge project.
 ﻿namespace ShibaBridge.API.Routes;
 
 public class ShibaBridgeAuth

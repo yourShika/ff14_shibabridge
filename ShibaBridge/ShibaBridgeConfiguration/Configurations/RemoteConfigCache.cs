@@ -1,3 +1,4 @@
+// RemoteConfigCache - part of ShibaBridge project.
 using System.Text.Json.Nodes;
 
 namespace ShibaBridge.ShibaBridgeConfiguration.Configurations;

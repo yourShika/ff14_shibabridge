@@ -1,3 +1,4 @@
+// SelectPairForGroupUi - part of ShibaBridge project.
 ﻿using Dalamud.Bindings.ImGui;
 using Dalamud.Interface.Utility;
 using ShibaBridge.PlayerData.Pairs;

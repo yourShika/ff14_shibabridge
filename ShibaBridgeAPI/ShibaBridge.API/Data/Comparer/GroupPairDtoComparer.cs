@@ -1,3 +1,4 @@
+// GroupPairDtoComparer - part of ShibaBridge project.
 ﻿using ShibaBridge.API.Dto.Group;
 
 namespace ShibaBridge.API.Data.Comparer;

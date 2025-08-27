@@ -1,3 +1,4 @@
+// PlayerChanges - part of ShibaBridge project.
 ﻿namespace ShibaBridge.PlayerData.Pairs;
 
 public enum PlayerChanges

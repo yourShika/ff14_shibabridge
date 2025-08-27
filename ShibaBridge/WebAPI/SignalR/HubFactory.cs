@@ -1,3 +1,4 @@
+// HubFactory - part of ShibaBridge project.
 ﻿using ShibaBridge.API.SignalR;
 using ShibaBridge.Services;
 using ShibaBridge.Services.Mediator;

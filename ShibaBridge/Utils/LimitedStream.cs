@@ -1,3 +1,4 @@
+// LimitedStream - part of ShibaBridge project.
 namespace ShibaBridge.Utils;
 
 // Limits the number of bytes read/written to an underlying stream

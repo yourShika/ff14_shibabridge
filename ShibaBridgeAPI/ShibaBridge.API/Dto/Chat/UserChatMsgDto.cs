@@ -1,3 +1,4 @@
+// UserChatMsgDto - part of ShibaBridge project.
 using ShibaBridge.API.Data;
 using ShibaBridge.API.Dto.User;
 using MessagePack;

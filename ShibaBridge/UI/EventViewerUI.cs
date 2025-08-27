@@ -1,3 +1,4 @@
+// EventViewerUI - part of ShibaBridge project.
 ﻿using Dalamud.Bindings.ImGui;
 using Dalamud.Interface;
 using Dalamud.Interface.Colors;

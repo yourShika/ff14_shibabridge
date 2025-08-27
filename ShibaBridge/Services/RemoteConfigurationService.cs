@@ -1,3 +1,4 @@
+// RemoteConfigurationService - part of ShibaBridge project.
 using Chaos.NaCl;
 using ShibaBridge.ShibaBridgeConfiguration;
 using Microsoft.Extensions.Logging;

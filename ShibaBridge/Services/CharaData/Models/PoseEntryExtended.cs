@@ -1,3 +1,4 @@
+// PoseEntryExtended - part of ShibaBridge project.
 ﻿using Dalamud.Utility;
 using Lumina.Excel.Sheets;
 using ShibaBridge.API.Dto.CharaData;

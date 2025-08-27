@@ -1,3 +1,4 @@
+// CharaDataFullExtendedDto - part of ShibaBridge project.
 ﻿using ShibaBridge.API.Dto.CharaData;
 using System.Collections.ObjectModel;
 

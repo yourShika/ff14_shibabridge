@@ -1,3 +1,4 @@
+// IpcCallerHonorific - part of ShibaBridge project.
 ﻿using Dalamud.Game.ClientState.Objects.SubKinds;
 using Dalamud.Plugin;
 using Dalamud.Plugin.Ipc;

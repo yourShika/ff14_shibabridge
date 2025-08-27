@@ -1,3 +1,4 @@
+// IPopupHandler - part of ShibaBridge project.
 ﻿using System.Numerics;
 
 namespace ShibaBridge.UI.Components.Popup;

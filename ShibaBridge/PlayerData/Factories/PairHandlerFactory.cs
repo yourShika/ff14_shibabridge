@@ -1,3 +1,4 @@
+// PairHandlerFactory - part of ShibaBridge project.
 ﻿using ShibaBridge.FileCache;
 using ShibaBridge.Interop.Ipc;
 using ShibaBridge.ShibaBridgeConfiguration;

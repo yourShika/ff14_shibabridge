@@ -1,3 +1,4 @@
+// UserIdentity - part of ShibaBridge project.
 namespace ShibaBridge.Server.Models;
 
 /// <summary>

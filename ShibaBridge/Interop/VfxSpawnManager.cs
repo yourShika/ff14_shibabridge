@@ -1,3 +1,4 @@
+// VfxSpawnManager - part of ShibaBridge project.
 ﻿using Dalamud.Memory;
 using Dalamud.Plugin.Services;
 using Dalamud.Utility.Signatures;

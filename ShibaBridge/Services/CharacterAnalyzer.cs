@@ -1,3 +1,4 @@
+// CharacterAnalyzer - part of ShibaBridge project.
 ﻿using Lumina.Data.Files;
 using ShibaBridge.API.Data;
 using ShibaBridge.API.Data.Enum;

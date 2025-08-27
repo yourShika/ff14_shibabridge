@@ -1,3 +1,4 @@
+// Crypto - part of ShibaBridge project.
 ﻿using System.Security.Cryptography;
 using System.Text;
 

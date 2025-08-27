@@ -1,3 +1,4 @@
+// PlayerDataFactory - part of ShibaBridge project.
 ﻿using FFXIVClientStructs.FFXIV.Client.Game.Character;
 using ShibaBridge.API.Data.Enum;
 using ShibaBridge.FileCache;

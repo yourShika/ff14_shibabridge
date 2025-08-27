@@ -1,3 +1,4 @@
+// MediatorSubscriberBase - part of ShibaBridge project.
 ﻿using Microsoft.Extensions.Logging;
 
 namespace ShibaBridge.Services.Mediator;

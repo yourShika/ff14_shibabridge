@@ -1,3 +1,4 @@
+// UserDtoComparer - part of ShibaBridge project.
 ﻿using ShibaBridge.API.Dto.User;
 
 namespace ShibaBridge.API.Data.Comparer;

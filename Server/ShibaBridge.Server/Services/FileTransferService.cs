@@ -1,3 +1,4 @@
+// FileTransferService - part of ShibaBridge project.
 using System.Collections.Concurrent;
 using Microsoft.Extensions.Logging;
 

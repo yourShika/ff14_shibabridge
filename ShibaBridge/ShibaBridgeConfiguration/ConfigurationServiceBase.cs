@@ -1,3 +1,4 @@
+// ConfigurationServiceBase - part of ShibaBridge project.
 ﻿using ShibaBridge.ShibaBridgeConfiguration.Configurations;
 using System.Text.Json;
 

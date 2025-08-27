@@ -1,3 +1,4 @@
+// MigrationService - part of ShibaBridge project.
 namespace ShibaBridge.Server.Services;
 
 /// <summary>

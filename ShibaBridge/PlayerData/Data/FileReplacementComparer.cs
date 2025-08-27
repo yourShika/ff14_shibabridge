@@ -1,3 +1,4 @@
+// FileReplacementComparer - part of ShibaBridge project.
 ﻿namespace ShibaBridge.PlayerData.Data;
 
 public class FileReplacementComparer : IEqualityComparer<FileReplacement>

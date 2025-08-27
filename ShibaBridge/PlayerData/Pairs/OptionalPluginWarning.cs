@@ -1,3 +1,4 @@
+// OptionalPluginWarning - part of ShibaBridge project.
 ﻿namespace ShibaBridge.PlayerData.Pairs;
 
 public record OptionalPluginWarning

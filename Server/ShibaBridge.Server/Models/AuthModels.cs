@@ -1,3 +1,4 @@
+// AuthModels - part of ShibaBridge project.
 namespace ShibaBridge.Server.Models;
 
 public record RegisterRequest(string PlayerName, string World);

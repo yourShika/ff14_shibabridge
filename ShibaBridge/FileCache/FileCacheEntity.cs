@@ -1,3 +1,4 @@
+// FileCacheEntity - part of ShibaBridge project.
 ﻿#nullable disable
 
 namespace ShibaBridge.FileCache;

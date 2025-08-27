@@ -1,3 +1,4 @@
+// DalamudUtilService - part of ShibaBridge project.
 ﻿using Dalamud.Game.ClientState.Conditions;
 using Dalamud.Game.ClientState.Objects;
 using Dalamud.Game.ClientState.Objects.SubKinds;

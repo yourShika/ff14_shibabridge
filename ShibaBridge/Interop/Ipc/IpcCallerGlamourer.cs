@@ -1,3 +1,4 @@
+// IpcCallerGlamourer - part of ShibaBridge project.
 ﻿using Dalamud.Game.ClientState.Objects.Types;
 using Dalamud.Plugin;
 using Glamourer.Api.Helpers;

@@ -1,4 +1,5 @@
-﻿using Dalamud.Plugin.Services;
+// PairManager - Teil des ShibaBridge Projekts.
+using Dalamud.Plugin.Services;
 using ShibaBridge.API.Data;
 using ShibaBridge.API.Data.Comparer;
 using ShibaBridge.API.Data.Extensions;
@@ -14,14 +15,27 @@ using System.Collections.Concurrent;
 
 namespace ShibaBridge.PlayerData.Pairs;
 
+/// <summary>
+///     Zentrale Verwaltung aller verbundenen Nutzer ("Pairs") und Gruppen.
+///     Man kann sich diese Klasse wie ein Adressbuch vorstellen, in dem alle
+///     uns bekannten Spieler samt ihrer Berechtigungen stehen.
+/// </summary>
 public sealed class PairManager : DisposableMediatorSubscriberBase
 {
+    // Merkliste aller bekannten Nutzer. Schlüssel ist die eindeutige UserData,
+    // der Wert ist das zugehörige Pair-Objekt.
     private readonly ConcurrentDictionary<UserData, Pair> _allClientPairs = new(UserDataComparer.Instance);
+    // Alle Gruppen, denen wir begegnet sind, inklusive aller Informationen.
     private readonly ConcurrentDictionary<GroupData, GroupFullInfoDto> _allGroups = new(GroupDataComparer.Instance);
+    // Zugriff auf die aktuelle Plugin-Konfiguration.
     private readonly ShibaBridgeConfigService _configurationService;
+    // Referenz auf das Dalamud Rechtsklick-Menü, damit wir Einträge hinzufügen können.
     private readonly IContextMenu _dalamudContextMenu;
+    // Fabrik zum Erzeugen neuer Pair-Objekte.
     private readonly PairFactory _pairFactory;
+    // Lazy, damit die Liste der direkten Pairs nur bei Bedarf neu erstellt wird.
     private Lazy<List<Pair>> _directPairsInternal;
+    // Lazy-Dictionary für alle Gruppen-Pairs. Spart Rechenzeit, wenn niemand danach fragt.
     private Lazy<Dictionary<GroupFullInfoDto, List<Pair>>> _groupPairsInternal;
 
     public PairManager(ILogger<PairManager> logger, PairFactory pairFactory,
@@ -45,12 +59,20 @@ public sealed class PairManager : DisposableMediatorSubscriberBase
     public Dictionary<GroupData, GroupFullInfoDto> Groups => _allGroups.ToDictionary(k => k.Key, k => k.Value);
     public Pair? LastAddedUser { get; internal set; }
 
+    /// <summary>
+    ///     Registers a new group known to the player and recalculates cached
+    ///     group information.
+    /// </summary>
+    // Neue Gruppe merken. Danach müssen wir die gecachten Listen erneuern,
+    // damit überall die aktuelle Information verfügbar ist.
     public void AddGroup(GroupFullInfoDto dto)
     {
         _allGroups[dto.Group] = dto;
         RecreateLazy();
     }
 
+    // Verknüpft einen Nutzer mit einer Gruppe. Existiert der Nutzer noch nicht,
+    // wird zuerst ein neues Pair-Objekt erstellt.
     public void AddGroupPair(GroupPairFullInfoDto dto)
     {
         if (!_allClientPairs.ContainsKey(dto.User))
@@ -61,6 +83,8 @@ public sealed class PairManager : DisposableMediatorSubscriberBase
         RecreateLazy();
     }
 
+    // Suche nach einem Pair anhand der eindeutigen UID. Wenn nichts gefunden wird,
+    // geben wir null zurück.
     public Pair? GetPairByUID(string uid)
     {
         var existingPair = _allClientPairs.FirstOrDefault(f => uid.Equals(f.Key.UID, StringComparison.Ordinal));
@@ -72,6 +96,8 @@ public sealed class PairManager : DisposableMediatorSubscriberBase
         return null;
     }
 
+    // Fügt einen direkten Freund hinzu. Wenn er schon existiert, wird nur
+    // sein Pair-Datensatz aktualisiert.
     public void AddUserPair(UserPairDto dto, bool addToLastAddedUser = true)
     {
         if (!_allClientPairs.ContainsKey(dto.User))
@@ -90,6 +116,10 @@ public sealed class PairManager : DisposableMediatorSubscriberBase
         RecreateLazy();
     }
 
+    /// <summary>
+    ///     Löscht alle gespeicherten Nutzer und Gruppen. Wird meistens aufgerufen,
+    ///     wenn die Verbindung zum Server abbricht.
+    /// </summary>
     public void ClearPairs()
     {
         Logger.LogDebug("Clearing all Pairs");
@@ -105,6 +135,9 @@ public sealed class PairManager : DisposableMediatorSubscriberBase
 
     public List<UserData> GetVisibleUsers() => _allClientPairs.Where(p => p.Value.IsVisible).Select(p => p.Key).ToList();
 
+    /// <summary>
+    ///     Markiert einen Nutzer als offline und leert dessen Profilinformationen.
+    /// </summary>
     public void MarkPairOffline(UserData user)
     {
         if (_allClientPairs.TryGetValue(user, out var pair))
@@ -116,6 +149,10 @@ public sealed class PairManager : DisposableMediatorSubscriberBase
         RecreateLazy();
     }
 
+    /// <summary>
+    ///     Setzt den angegebenen Nutzer auf online und sendet optional eine
+    ///     Benachrichtigung an den Spieler.
+    /// </summary>
     public void MarkPairOnline(OnlineUserIdentDto dto, bool sendNotif = true)
     {
         if (!_allClientPairs.ContainsKey(dto.User)) throw new InvalidOperationException("No user found for " + dto);
@@ -147,6 +184,8 @@ public sealed class PairManager : DisposableMediatorSubscriberBase
         RecreateLazy();
     }
 
+    // Wir haben neue Charakter-Daten für einen Nutzer erhalten und leiten sie
+    // an das entsprechende Pair weiter.
     public void ReceiveCharaData(OnlineUserCharaDataDto dto)
     {
         if (!_allClientPairs.TryGetValue(dto.User, out var pair)) throw new InvalidOperationException("No user found for " + dto.User);
@@ -155,6 +194,7 @@ public sealed class PairManager : DisposableMediatorSubscriberBase
         _allClientPairs[dto.User].ApplyData(dto);
     }
 
+    // Entfernt eine komplette Gruppe aus allen Pairs.
     public void RemoveGroup(GroupData data)
     {
         _allGroups.TryRemove(data, out _);

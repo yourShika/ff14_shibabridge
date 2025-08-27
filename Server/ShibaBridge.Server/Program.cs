@@ -1,3 +1,4 @@
+// Program - part of ShibaBridge project.
 using Microsoft.AspNetCore.RateLimiting;
 using ShibaBridge.Server.Hubs;
 using ShibaBridge.Server.Services;

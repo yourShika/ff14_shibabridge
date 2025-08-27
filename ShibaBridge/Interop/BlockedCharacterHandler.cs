@@ -1,3 +1,4 @@
+// BlockedCharacterHandler - part of ShibaBridge project.
 ﻿using Dalamud.Plugin.Services;
 using FFXIVClientStructs.FFXIV.Client.Game.Character;
 using FFXIVClientStructs.FFXIV.Client.UI.Info;

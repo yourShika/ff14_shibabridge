@@ -1,3 +1,4 @@
+// CommandManagerService - part of ShibaBridge project.
 ﻿using Dalamud.Game.Command;
 using Dalamud.Plugin.Services;
 using ShibaBridge.FileCache;

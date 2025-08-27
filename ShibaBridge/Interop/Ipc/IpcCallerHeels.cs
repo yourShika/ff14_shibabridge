@@ -1,3 +1,4 @@
+// IpcCallerHeels - part of ShibaBridge project.
 ﻿using Dalamud.Plugin;
 using Dalamud.Plugin.Ipc;
 using ShibaBridge.Services;

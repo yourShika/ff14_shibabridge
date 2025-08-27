@@ -1,3 +1,4 @@
+// Pair - Teil des ShibaBridge Projekts.
 ﻿using Dalamud.Game.Gui.ContextMenu;
 using Dalamud.Game.Text.SeStringHandling;
 using ShibaBridge.API.Data;
@@ -20,12 +21,19 @@ namespace ShibaBridge.PlayerData.Pairs;
 
 public class Pair : DisposableMediatorSubscriberBase
 {
+    // Fabrik, die uns beim Erstellen von "CachedPlayer"-Objekten hilft.
     private readonly PairHandlerFactory _cachedPlayerFactory;
+    // Stellt sicher, dass nur ein gleichzeitiger Erstellungsprozess läuft.
     private readonly SemaphoreSlim _creationSemaphore = new(1);
+    // Logger für Debug- und Fehlerausgaben.
     private readonly ILogger<Pair> _logger;
+    // Zugriff auf die Plugin-Konfiguration.
     private readonly ShibaBridgeConfigService _shibabridgeConfig;
+    // Kennt die Servereinstellungen wie Black- und Whitelist.
     private readonly ServerConfigurationManager _serverConfigurationManager;
+    // Wird genutzt, um laufende Datenanwendungen abbrechen zu können.
     private CancellationTokenSource _applicationCts = new();
+    // Enthält Identifikationsinfos, wenn der Nutzer online ist.
     private OnlineUserIdentDto? _onlineUserIdentDto = null;
 
     public Pair(ILogger<Pair> logger, UserData userData, PairHandlerFactory cachedPlayerFactory,
@@ -50,7 +58,7 @@ public class Pair : DisposableMediatorSubscriberBase
     public bool IsPaused => UserPair != null && UserPair.OtherPermissions.IsPaired() ? UserPair.OtherPermissions.IsPaused() || UserPair.OwnPermissions.IsPaused()
             : GroupPair.All(p => p.Key.GroupUserPermissions.IsPaused() || p.Value.GroupUserPermissions.IsPaused());
 
-    // Download locks apply earlier in the process than Application locks
+    // Download-Sperren greifen früher als Anwendungs-Sperren.
     private ConcurrentDictionary<string, int> HoldDownloadLocks { get; set; } = new(StringComparer.Ordinal);
     private ConcurrentDictionary<string, int> HoldApplicationLocks { get; set; } = new(StringComparer.Ordinal);
 
@@ -76,6 +84,8 @@ public class Pair : DisposableMediatorSubscriberBase
 
     private PairHandler? CachedPlayer { get; set; }
 
+    // Baut das Rechtsklick-Menü für den Spieler auf. Hier können z.B.
+    // Profile geöffnet oder Berechtigungen geändert werden.
     public void AddContextMenu(IMenuOpenedArgs args)
     {
         if (CachedPlayer == null || (args.Target is not MenuTargetDefault target) || target.TargetObjectId != CachedPlayer.PlayerCharacterId || IsPaused) return;
@@ -131,6 +141,8 @@ public class Pair : DisposableMediatorSubscriberBase
         }
     }
 
+    // Verarbeitet eingehende Charakterdaten eines Spielers.
+    // Ist der Spieler noch nicht vollständig initialisiert, wird das Anwenden verzögert.
     public void ApplyData(OnlineUserCharaDataDto data)
     {
         _applicationCts = _applicationCts.CancelRecreate();
@@ -162,6 +174,8 @@ public class Pair : DisposableMediatorSubscriberBase
         ApplyLastReceivedData();
     }
 
+    // Wendet die zuletzt empfangenen Daten auf den Spieler an.
+    // Berücksichtigt Sperrungen und optionale erzwungene Aktualisierung.
     public void ApplyLastReceivedData(bool forced = false)
     {
         if (CachedPlayer == null) return;
@@ -179,6 +193,8 @@ public class Pair : DisposableMediatorSubscriberBase
         CachedPlayer.ApplyCharacterData(Guid.NewGuid(), RemoveNotSyncedFiles(LastReceivedCharacterData.DeepClone())!, forced);
     }
 
+    // Erstellt den internen "CachedPlayer", sobald Identifikationsdaten vorliegen.
+    // Mehrfache Aufrufe werden durch ein Semaphore verhindert.
     public void CreateCachedPlayer(OnlineUserIdentDto? dto = null)
     {
         try
@@ -285,6 +301,8 @@ public class Pair : DisposableMediatorSubscriberBase
         CachedPlayer?.SetUploading();
     }
 
+    // Erhöht einen Zähler, der das Anwenden von Änderungen blockiert.
+    // Mehrere Quellen können so gleichzeitig Sperren setzen.
     public void HoldApplication(string source, int maxValue = int.MaxValue)
     {
         _logger.LogDebug($"Holding {UserData.UID} for reason: {source}");
@@ -294,6 +312,8 @@ public class Pair : DisposableMediatorSubscriberBase
             CachedPlayer?.UndoApplication();
     }
 
+    // Verringert die Sperre einer Quelle und wendet Daten erneut an,
+    // sobald keine Sperren mehr aktiv sind.
     public void UnholdApplication(string source, bool skipApplication = false)
     {
         _logger.LogDebug($"Un-holding {UserData.UID} for reason: {source}");
@@ -304,6 +324,7 @@ public class Pair : DisposableMediatorSubscriberBase
             ApplyLastReceivedData(forced: true);
     }
 
+    // Blockiert das Herunterladen von Mod-Dateien für diesen Spieler.
     public void HoldDownloads(string source, int maxValue = int.MaxValue)
     {
         _logger.LogDebug($"Holding {UserData.UID} for reason: {source}");
@@ -313,6 +334,7 @@ public class Pair : DisposableMediatorSubscriberBase
             CachedPlayer?.UndoApplication();
     }
 
+    // Hebt eine Download-Sperre wieder auf und führt ggf. eine Aktualisierung durch.
     public void UnholdDownloads(string source, bool skipApplication = false)
     {
         _logger.LogDebug($"Un-holding {UserData.UID} for reason: {source}");
@@ -323,6 +345,8 @@ public class Pair : DisposableMediatorSubscriberBase
             ApplyLastReceivedData(forced: true);
     }
 
+    // Entfernt aus den übermittelten Daten alle Dateien, deren Nutzung
+    // aufgrund von Berechtigungen oder Einstellungen verboten ist.
     private CharacterData? RemoveNotSyncedFiles(CharacterData? data)
     {
         _logger.LogTrace("Removing not synced files");

@@ -1,3 +1,4 @@
+// CharaDataGposeTogetherManager - part of ShibaBridge project.
 ﻿using Dalamud.Game.ClientState.Objects.SubKinds;
 using ShibaBridge.API.Data;
 using ShibaBridge.API.Dto.CharaData;

@@ -1,3 +1,4 @@
+// ThrottledStream - part of ShibaBridge project.
 ﻿namespace ShibaBridge.WebAPI.Files
 {
     /// <summary>

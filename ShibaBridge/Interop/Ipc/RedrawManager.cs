@@ -1,3 +1,4 @@
+// RedrawManager - part of ShibaBridge project.
 ﻿using Dalamud.Game.ClientState.Objects.Types;
 using ShibaBridge.PlayerData.Handlers;
 using ShibaBridge.Services;

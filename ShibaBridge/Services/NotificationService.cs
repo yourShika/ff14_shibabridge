@@ -1,3 +1,4 @@
+// NotificationService - part of ShibaBridge project.
 ﻿using Dalamud.Game.Text.SeStringHandling;
 using Dalamud.Interface.ImGuiNotification;
 using Dalamud.Plugin.Services;

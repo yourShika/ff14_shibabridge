@@ -1,3 +1,4 @@
+// CharaDataHubUi.Functions - part of ShibaBridge project.
 ﻿using Dalamud.Interface.Utility.Raii;
 using ShibaBridge.API.Dto.CharaData;
 using ShibaBridge.ShibaBridgeConfiguration.Models;

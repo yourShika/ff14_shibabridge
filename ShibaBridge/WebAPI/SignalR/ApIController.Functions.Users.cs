@@ -1,3 +1,4 @@
+// ApIController.Functions.Users - part of ShibaBridge project.
 ﻿using ShibaBridge.API.Data;
 using ShibaBridge.API.Dto.User;
 using Microsoft.AspNetCore.SignalR.Client;

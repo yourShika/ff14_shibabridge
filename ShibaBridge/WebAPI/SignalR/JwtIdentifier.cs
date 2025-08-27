@@ -1,3 +1,4 @@
+// JwtIdentifier - part of ShibaBridge project.
 ﻿namespace ShibaBridge.WebAPI.SignalR;
 
 public record JwtIdentifier(string ApiUrl, string CharaHash, string SecretKey)

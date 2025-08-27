@@ -1,3 +1,4 @@
+// ForeverRetryPolicy - part of ShibaBridge project.
 ﻿using ShibaBridge.ShibaBridgeConfiguration.Models;
 using ShibaBridge.Services.Mediator;
 using Microsoft.AspNetCore.SignalR.Client;

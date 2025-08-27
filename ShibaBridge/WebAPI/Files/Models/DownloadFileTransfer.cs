@@ -1,3 +1,4 @@
+// DownloadFileTransfer - part of ShibaBridge project.
 ﻿using ShibaBridge.API.Dto.Files;
 
 namespace ShibaBridge.WebAPI.Files.Models;

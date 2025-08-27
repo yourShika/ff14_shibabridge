@@ -1,3 +1,4 @@
+// FileUploadManager - part of ShibaBridge project.
 ﻿using ShibaBridge.API.Data;
 using ShibaBridge.API.Dto.Files;
 using ShibaBridge.API.Routes;

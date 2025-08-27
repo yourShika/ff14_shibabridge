@@ -1,3 +1,4 @@
+// GposeLobbyUserData - part of ShibaBridge project.
 ﻿using Dalamud.Utility;
 using ShibaBridge.API.Data;
 using ShibaBridge.API.Dto.CharaData;

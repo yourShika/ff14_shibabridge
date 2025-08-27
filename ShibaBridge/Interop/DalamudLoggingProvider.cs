@@ -1,3 +1,4 @@
+// DalamudLoggingProvider - part of ShibaBridge project.
 ﻿using Dalamud.Plugin.Services;
 using ShibaBridge.ShibaBridgeConfiguration;
 using Microsoft.Extensions.Logging;

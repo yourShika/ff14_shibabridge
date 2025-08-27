@@ -1,3 +1,4 @@
+// PairAnalyzerFactory - part of ShibaBridge project.
 ﻿using ShibaBridge.FileCache;
 using ShibaBridge.PlayerData.Pairs;
 using ShibaBridge.Services;

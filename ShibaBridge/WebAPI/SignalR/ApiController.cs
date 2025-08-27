@@ -1,3 +1,4 @@
+// ApiController - part of ShibaBridge project.
 ﻿using Dalamud.Utility;
 using ShibaBridge.API.Data;
 using ShibaBridge.API.Data.Extensions;

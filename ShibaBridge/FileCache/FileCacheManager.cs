@@ -1,3 +1,4 @@
+// FileCacheManager - part of ShibaBridge project.
 ﻿using Dalamud.Utility;
 using K4os.Compression.LZ4.Streams;
 using ShibaBridge.Interop.Ipc;

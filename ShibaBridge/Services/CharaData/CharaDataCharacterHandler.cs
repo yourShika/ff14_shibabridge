@@ -1,3 +1,4 @@
+// CharaDataCharacterHandler - part of ShibaBridge project.
 ﻿using ShibaBridge.API.Data.Enum;
 using ShibaBridge.Interop.Ipc;
 using ShibaBridge.PlayerData.Factories;

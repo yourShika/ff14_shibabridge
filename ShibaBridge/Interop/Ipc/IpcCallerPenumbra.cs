@@ -1,3 +1,4 @@
+// IpcCallerPenumbra - part of ShibaBridge project.
 ﻿using Dalamud.Plugin;
 using ShibaBridge.ShibaBridgeConfiguration.Models;
 using ShibaBridge.PlayerData.Handlers;

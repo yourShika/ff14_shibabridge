@@ -1,3 +1,4 @@
+// ServerConfig - part of ShibaBridge project.
 ﻿using ShibaBridge.ShibaBridgeConfiguration.Models;
 using ShibaBridge.WebAPI;
 
