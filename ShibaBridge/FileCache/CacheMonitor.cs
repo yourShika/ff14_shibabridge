@@ -497,15 +497,20 @@ public sealed class CacheMonitor : DisposableMediatorSubscriberBase
         var allSubstFiles = Directory.GetFiles(substDir, "*.*", SearchOption.TopDirectoryOnly)
                                 .Where(f =>
                                 {
+                                    // Nur Dateien mit 40-stelligem Hash oder .tmp-Endung
                                     var val = f.Split('\\')[^1];
                                     return val.Length == 40 || (val.Split('.').FirstOrDefault()?.Length ?? 0) == 40
                                         || val.EndsWith(".tmp", StringComparison.OrdinalIgnoreCase);
                                 });
+
+        // Deaktiviere Watcher während Löschvorgang
         if (SubstWatcher != null)
             SubstWatcher.EnableRaisingEvents = false;
 
+        // Alle Dateien als gelöscht markieren
         Dictionary<string, WatcherChange> changes = _substChanges.ToDictionary(t => t.Key, t => new WatcherChange(WatcherChangeTypes.Deleted, t.Key), StringComparer.Ordinal);
 
+        // Lösche Dateien
         foreach (var file in allSubstFiles)
         {
             try
@@ -525,10 +530,14 @@ public sealed class CacheMonitor : DisposableMediatorSubscriberBase
             SubstWatcher.EnableRaisingEvents = true;
     }
 
+    // Löscht Originaldateien aus dem ShibaBridge Cache, die auch im Subst-Verzeichnis liegen
     public void DeleteSubstOriginals()
     {
+        // Cache-Ordner und Subst-Ordner
         var cacheDir = _configService.Current.CacheFolder;
         var substDir = _fileDbManager.SubstFolder;
+
+        // Alle Dateien im Subst-Ordner mit 40-stelligem Hash oder .tmp-Endung
         var allSubstFiles = Directory.GetFiles(substDir, "*.*", SearchOption.TopDirectoryOnly)
                                 .Where(f =>
                                 {
@@ -537,58 +546,81 @@ public sealed class CacheMonitor : DisposableMediatorSubscriberBase
                                         || val.EndsWith(".tmp", StringComparison.OrdinalIgnoreCase);
                                 });
 
+        // Lösche Originaldateien im Cache-Ordner
         foreach (var substFile in allSubstFiles)
         {
+            // Originaldatei im Cache-Ordner
             var cacheFile = Path.Join(cacheDir, Path.GetFileName(substFile));
+
             try
             {
                 if (File.Exists(cacheFile))
                     File.Delete(cacheFile);
             }
-            catch { }
+            catch 
+            {
+                Logger.LogWarning("Could not delete cache file {file}", cacheFile);
+            }
         }
     }
 
+    // Verarbeitet die gesammelten Änderungen
     private void HandleChanges(Dictionary<string, WatcherChange> changes)
     {
+        // Sperre Datenbank-Operationen
         lock (_fileDbManager)
         {
+            // Logge Änderungen
             var deletedEntries = changes.Where(c => c.Value.ChangeType == WatcherChangeTypes.Deleted).Select(c => c.Key);
             var renamedEntries = changes.Where(c => c.Value.ChangeType == WatcherChangeTypes.Renamed);
             var remainingEntries = changes.Where(c => c.Value.ChangeType != WatcherChangeTypes.Deleted).Select(c => c.Key);
 
+            // Logge Details
             foreach (var entry in deletedEntries)
             {
                 Logger.LogDebug("FSW Change: Deletion - {val}", entry);
             }
 
+            // Logge Umbenennungen
             foreach (var entry in renamedEntries)
             {
                 Logger.LogDebug("FSW Change: Renamed - {oldVal} => {val}", entry.Value.OldPath, entry.Key);
             }
 
+            // Logge Erstellungen/Änderungen
             foreach (var entry in remainingEntries)
             {
                 Logger.LogDebug("FSW Change: Creation or Change - {val}", entry);
             }
 
+            // Sammle alle betroffenen Pfade
             var allChanges = deletedEntries
                 .Concat(renamedEntries.Select(c => c.Value.OldPath!))
                 .Concat(renamedEntries.Select(c => c.Key))
                 .Concat(remainingEntries)
                 .ToArray();
 
+            // Aktualisiere Datenbank
             _ = _fileDbManager.GetFileCachesByPaths(allChanges);
 
+            // Verarbeite Änderungen
             _fileDbManager.WriteOutFullCsv();
         }
     }
 
+    // Asynchrone Verarbeitung von Änderungen im Penumbra Mod-Verzeichnis
     private async Task PenumbraWatcherExecution()
     {
+        // Abbrechen vorheriger Tasks
         _penumbraFswCts = _penumbraFswCts.CancelRecreate();
+
+        // Wartezeit und Token
         var token = _penumbraFswCts.Token;
+
+        // Kopiere Änderungen
         Dictionary<string, WatcherChange> changes;
+
+        // Sperre und kopiere Änderungen
         lock (_watcherChanges)
             changes = _watcherChanges.ToDictionary(t => t.Key, t => t.Value, StringComparer.Ordinal);
         var delay = TimeSpan.FromSeconds(10);
@@ -596,14 +628,21 @@ public sealed class CacheMonitor : DisposableMediatorSubscriberBase
         {
             do
             {
+                // Wartezeit, bis keine weiteren Änderungen kommen
                 await Task.Delay(delay, token).ConfigureAwait(false);
-            } while (HaltScanLocks.Any(f => f.Value.Value > 0));
+            }
+            while 
+            (
+            // Warte, bis alle Scan-Sperren aufgehoben sind
+            HaltScanLocks.Any(f => f.Value.Value > 0)
+            );
         }
         catch (TaskCanceledException)
         {
             return;
         }
 
+        // Entferne verarbeitete Änderungen
         lock (_watcherChanges)
         {
             foreach (var key in changes.Keys)
@@ -615,23 +654,36 @@ public sealed class CacheMonitor : DisposableMediatorSubscriberBase
         HandleChanges(changes);
     }
 
+    // Startet einen vollständigen Scan der Verzeichnisse
     public void InvokeScan()
     {
+        // Variablen definieren
         TotalFiles = 0;
         _currentFileProgress = 0;
+
+        // Abbrechen vorheriger Scans
         _scanCancellationTokenSource = _scanCancellationTokenSource?.CancelRecreate() ?? new CancellationTokenSource();
+
+        // Abbruch-Token
         var token = _scanCancellationTokenSource.Token;
+
+        // Starte neuen Scan-Task
         _ = Task.Run(async () =>
         {
             Logger.LogDebug("Starting Full File Scan");
+
+            // Variablen zurücksetzen
             TotalFiles = 0;
             _currentFileProgress = 0;
+
+            // Warte, bis nicht mehr im Framework-Thread
             while (_dalamudUtil.IsOnFrameworkThread)
             {
                 Logger.LogWarning("Scanner is on framework, waiting for leaving thread before continuing");
                 await Task.Delay(250, token).ConfigureAwait(false);
             }
 
+            // Scan in eigenem Thread mit niedriger Priorität
             Thread scanThread = new(() =>
             {
                 try
@@ -647,18 +699,23 @@ public sealed class CacheMonitor : DisposableMediatorSubscriberBase
                 Priority = ThreadPriority.Lowest,
                 IsBackground = true
             };
+            // Starte Scan-Thread
             scanThread.Start();
+
             while (scanThread.IsAlive)
             {
                 await Task.Delay(250).ConfigureAwait(false);
             }
+            // Variablen zurücksetzen
             TotalFiles = 0;
             _currentFileProgress = 0;
         }, token);
     }
 
+    // Berechnet die Größe des File-Caches und löscht alte Dateien, wenn das Limit überschritten ist
     public void RecalculateFileCacheSize(CancellationToken token)
     {
+        // Prüfen ob Cache-Verzeichnis existiert
         if (string.IsNullOrEmpty(_configService.Current.CacheFolder) || !Directory.Exists(_configService.Current.CacheFolder))
         {
             FileCacheSize = 0;
@@ -666,6 +723,8 @@ public sealed class CacheMonitor : DisposableMediatorSubscriberBase
         }
 
         FileCacheSize = -1;
+
+        // Verfügbaren Speicherplatz auf dem Laufwerk ermitteln
         DriveInfo di = new(new DirectoryInfo(_configService.Current.CacheFolder).Root.FullName);
         try
         {
@@ -676,14 +735,17 @@ public sealed class CacheMonitor : DisposableMediatorSubscriberBase
             Logger.LogWarning(ex, "Could not determine drive size for Storage Folder {folder}", _configService.Current.CacheFolder);
         }
 
+        // Alle Dateien im Cache- und Subst-Ordner sammeln, nach letztem Zugriff sortieren
         var files = Directory.EnumerateFiles(_configService.Current.CacheFolder)
             .Concat(Directory.EnumerateFiles(_fileDbManager.SubstFolder))
             .Select(f => new FileInfo(f))
             .OrderBy(f => f.LastAccessTime).ToList();
+
+        // Dateigrößen summieren (tatsächliche Größe auf Disk, abhängig vom Dateisystem)
         FileCacheSize = files
             .Sum(f =>
             {
-                token.ThrowIfCancellationRequested();
+                token.ThrowIfCancellationRequested(); // Abbruch möglich
 
                 try
                 {
@@ -695,13 +757,13 @@ public sealed class CacheMonitor : DisposableMediatorSubscriberBase
                 }
             });
 
+        // Limit in Bytes (aus Konfiguration in GiB)
         var maxCacheInBytes = (long)(_configService.Current.MaxLocalCacheInGiB * 1024d * 1024d * 1024d);
-
         if (FileCacheSize < maxCacheInBytes) return;
 
-        var substDir = _fileDbManager.SubstFolder;
+        var maxCacheBuffer = maxCacheInBytes * 0.05d; // 5 % Puffer
 
-        var maxCacheBuffer = maxCacheInBytes * 0.05d;
+        // Solange Größe über dem Limit liegt → älteste Dateien löschen
         while (FileCacheSize > maxCacheInBytes - (long)maxCacheBuffer)
         {
             var oldestFile = files[0];
@@ -711,17 +773,20 @@ public sealed class CacheMonitor : DisposableMediatorSubscriberBase
         }
     }
 
+    // Setzt alle Locks zurück (Scan-Blockaden aufgehoben)
     public void ResetLocks()
     {
         HaltScanLocks.Clear();
     }
 
+    // Setzt Scan für eine Quelle fort (Lock-Zähler wird dekrementiert)
     public void ResumeScan(string source)
     {
         HaltScanLocks.TryAdd(source, new(0));
         Interlocked.Decrement(ref HaltScanLocks[source].Value);
     }
 
+    // Cleanup beim Entsorgen des Monitors
     protected override void Dispose(bool disposing)
     {
         base.Dispose(disposing);
@@ -735,13 +800,18 @@ public sealed class CacheMonitor : DisposableMediatorSubscriberBase
         _periodicCalculationTokenSource?.CancelDispose();
     }
 
+    // Führt einen vollständigen Scan aller relevanten Dateien aus
     private void FullFileScan(CancellationToken ct)
     {
         TotalFiles = 1;
+
+        // Variablen für Verzeichnisse und Existenzprüfungen
         var penumbraDir = _ipcManager.Penumbra.ModDirectory;
         bool penDirExists = true;
         bool cacheDirExists = true;
         var substDir = _fileDbManager.SubstFolder;
+
+        // Prüfen ob Verzeichnisse existieren
         if (string.IsNullOrEmpty(penumbraDir) || !Directory.Exists(penumbraDir))
         {
             penDirExists = false;
@@ -757,6 +827,7 @@ public sealed class CacheMonitor : DisposableMediatorSubscriberBase
             return;
         }
 
+        // Sicherstellen, dass Subst-Verzeichnis existiert
         try
         {
             if (!Directory.Exists(substDir))
@@ -767,15 +838,18 @@ public sealed class CacheMonitor : DisposableMediatorSubscriberBase
             Logger.LogWarning("Could not create subst directory at {path}.", substDir);
         }
 
+        // Scan-Thread priorisieren
         var previousThreadPriority = Thread.CurrentThread.Priority;
         Thread.CurrentThread.Priority = ThreadPriority.Lowest;
         Logger.LogDebug("Getting files from {penumbra} and {storage}", penumbraDir, _configService.Current.CacheFolder);
 
+        // Alle Penumbra-Dateien (mit erlaubten Extensions) sammeln
         Dictionary<string, string[]> penumbraFiles = new(StringComparer.Ordinal);
         foreach (var folder in Directory.EnumerateDirectories(penumbraDir!))
         {
             try
             {
+                // Alle Dateien mit erlaubten Extensions sammeln, bg, bgcommon und ui Ordner ignorieren
                 penumbraFiles[folder] =
                 [
                     .. Directory.GetFiles(folder, "*.*", SearchOption.AllDirectories)
@@ -794,6 +868,7 @@ public sealed class CacheMonitor : DisposableMediatorSubscriberBase
             if (ct.IsCancellationRequested) return;
         }
 
+        // Cache- und Subst-Dateien sammeln
         var allCacheFiles = Directory.GetFiles(_configService.Current.CacheFolder, "*.*", SearchOption.TopDirectoryOnly)
                                 .Concat(Directory.GetFiles(substDir, "*.*", SearchOption.TopDirectoryOnly))
                                 .AsParallel()
@@ -805,6 +880,7 @@ public sealed class CacheMonitor : DisposableMediatorSubscriberBase
 
         if (ct.IsCancellationRequested) return;
 
+        // Alle Scans zusammenführen
         var allScannedFiles = (penumbraFiles.SelectMany(k => k.Value))
             .Concat(allCacheFiles)
             .Distinct(StringComparer.OrdinalIgnoreCase)
@@ -817,18 +893,22 @@ public sealed class CacheMonitor : DisposableMediatorSubscriberBase
 
         if (ct.IsCancellationRequested) return;
 
-        // scan files from database
+        // -----------------------
+        // Phase 1: DB-Dateien prüfen
+        // -----------------------
         var threadCount = Math.Clamp((int)(Environment.ProcessorCount / 2.0f), 2, 8);
 
+        // Dateien zum Entfernen/Aktualisieren sammeln
         List<FileCacheEntity> entitiesToRemove = [];
         List<FileCacheEntity> entitiesToUpdate = [];
         Lock sync = new();
         Thread[] workerThreads = new Thread[threadCount];
 
+        // Alle vorhandenen DB-Dateien in eine ConcurrentQueue packen
         ConcurrentQueue<FileCacheEntity> fileCaches = new(_fileDbManager.GetAllFileCaches());
-
         TotalFilesStorage = fileCaches.Count;
 
+        // Worker-Threads starten
         for (int i = 0; i < threadCount; i++)
         {
             Logger.LogTrace("Creating Thread {i}", i);
@@ -842,22 +922,28 @@ public sealed class CacheMonitor : DisposableMediatorSubscriberBase
                     {
                         if (ct.IsCancellationRequested) return;
 
+                        // Prüfen ob Penumbra noch verfügbar ist
                         if (!_ipcManager.Penumbra.APIAvailable)
                         {
                             Logger.LogWarning("Penumbra not available");
                             return;
                         }
 
+                        // Validieren, ob Datei noch existiert und ob Hash noch stimmt
                         var validatedCacheResult = _fileDbManager.ValidateFileCacheEntity(workload);
+
+                        // Datei als gescannt markieren, außer sie soll gelöscht werden
                         if (validatedCacheResult.State != FileState.RequireDeletion)
                         {
                             lock (sync) { allScannedFiles[validatedCacheResult.FileCache.ResolvedFilepath] = true; }
                         }
+                        // Datei zum Updaten oder Entfernen vormerken
                         if (validatedCacheResult.State == FileState.RequireUpdate)
                         {
                             Logger.LogTrace("To update: {path}", validatedCacheResult.FileCache.ResolvedFilepath);
                             lock (sync) { entitiesToUpdate.Add(validatedCacheResult.FileCache); }
                         }
+                        // oder zum Löschen vormerken
                         else if (validatedCacheResult.State == FileState.RequireDeletion)
                         {
                             Logger.LogTrace("To delete: {path}", validatedCacheResult.FileCache.ResolvedFilepath);
@@ -877,9 +963,11 @@ public sealed class CacheMonitor : DisposableMediatorSubscriberBase
                 Priority = ThreadPriority.Lowest,
                 IsBackground = true
             };
+
             workerThreads[i].Start(i);
         }
 
+        // Warten bis alle Threads fertig sind
         while (!ct.IsCancellationRequested && workerThreads.Any(u => u.IsAlive))
         {
             Thread.Sleep(1000);
@@ -889,12 +977,16 @@ public sealed class CacheMonitor : DisposableMediatorSubscriberBase
 
         Logger.LogTrace("Threads exited");
 
+        // Prüfen ob Penumbra noch verfügbar ist
         if (!_ipcManager.Penumbra.APIAvailable)
         {
             Logger.LogWarning("Penumbra not available");
             return;
         }
 
+         // -----------------------
+        // Phase 2: DB aktualisieren
+        // -----------------------
         if (entitiesToUpdate.Any() || entitiesToRemove.Any())
         {
             foreach (var entity in entitiesToUpdate)
@@ -902,16 +994,19 @@ public sealed class CacheMonitor : DisposableMediatorSubscriberBase
                 _fileDbManager.UpdateHashedFile(entity);
             }
 
+            // Entfernen immer zuletzt, da sonst evtl. doppelte Einträge entstehen können
             foreach (var entity in entitiesToRemove)
             {
                 _fileDbManager.RemoveHashedFile(entity.Hash, entity.PrefixedFilePath);
             }
 
+            // CSV neu schreiben
             _fileDbManager.WriteOutFullCsv();
         }
 
         Logger.LogTrace("Scanner validated existing db files");
 
+        // Prüfen ob Penumbra noch verfügbar ist
         if (!_ipcManager.Penumbra.APIAvailable)
         {
             Logger.LogWarning("Penumbra not available");
@@ -920,9 +1015,12 @@ public sealed class CacheMonitor : DisposableMediatorSubscriberBase
 
         if (ct.IsCancellationRequested) return;
 
-        // scan new files
+        // -----------------------
+        // Phase 3: Neue Dateien hinzufügen
+        // -----------------------
         if (allScannedFiles.Any(c => !c.Value))
         {
+            // Neue Dateien hinzufügen
             Parallel.ForEach(allScannedFiles.Where(c => !c.Value).Select(c => c.Key),
                 new ParallelOptions()
                 {
@@ -932,12 +1030,14 @@ public sealed class CacheMonitor : DisposableMediatorSubscriberBase
                 {
                     if (ct.IsCancellationRequested) return;
 
+                    // Prüfen ob Penumbra noch verfügbar ist
                     if (!_ipcManager.Penumbra.APIAvailable)
                     {
                         Logger.LogWarning("Penumbra not available");
                         return;
                     }
 
+                    // Neue Datei hinzufügen
                     try
                     {
                         var entry = _fileDbManager.CreateFileEntry(cachePath);
@@ -960,12 +1060,14 @@ public sealed class CacheMonitor : DisposableMediatorSubscriberBase
             Logger.LogTrace("Scanner added {notScanned} new files to db", allScannedFiles.Count(c => !c.Value));
         }
 
+        // Scan abgeschlossen, Variablen zurücksetzen
         Logger.LogDebug("Scan complete");
         TotalFiles = 0;
         _currentFileProgress = 0;
         entitiesToRemove.Clear();
         allScannedFiles.Clear();
 
+        // Initialen Scan als abgeschlossen markieren
         if (!_configService.Current.InitialScanComplete)
         {
             _configService.Current.InitialScanComplete = true;
