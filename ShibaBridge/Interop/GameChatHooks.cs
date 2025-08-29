@@ -1,4 +1,14 @@
-// GameChatHooks - part of ShibaBridge project.
+// GameCha// GameChatHooks - Teil des ShibaBridge-Projekts.
+// Aufgabe:
+//  - Low-Level Hooks in den FFXIV-Chatmechanismus (via Signatures und Hooks).
+//  - Ermöglicht Channel Overrides, Custom Channel Handler und /ss Commands.
+//  - Erkennt, ob Nachrichten Befehle oder Chat-Text sind (inkl. Auto-Translate).
+//  - Kann temporäre Channel/Tell-Overrides und UI-Anpassungen steuern.
+//  - Nutzt das Dalamud Hooking-System, um Originalfunktionen abzufangen und zu erweitern.
+//
+// Hinweis: Viele Funktionen stammen aus FFXIV Reverse Engineering (u. a. ExtraChat-Projekt).
+//          Unsicheres Arbeiten mit Pointern und Unmanaged Memory.
+
 using Dalamud.Game.Text.SeStringHandling;
 using Dalamud.Game.Text.SeStringHandling.Payloads;
 using Dalamud.Hooking;
@@ -18,8 +28,8 @@ namespace ShibaBridge.Interop;
 
 public record ChatChannelOverride
 {
-    public string ChannelName = string.Empty;
-    public Action<byte[]>? ChatMessageHandler;
+    public string ChannelName = string.Empty;   // Name, der im Chat angezeigt wird
+    public Action<byte[]>? ChatMessageHandler;  // Callback für Nachrichten in diesem Channel
 }
 
 public unsafe sealed class GameChatHooks : IDisposable
@@ -27,81 +37,69 @@ public unsafe sealed class GameChatHooks : IDisposable
     // Based on https://git.anna.lgbt/anna/ExtraChat/src/branch/main/client/ExtraChat/GameFunctions.cs
 
     private readonly ILogger<GameChatHooks> _logger;
-    private readonly Action<int, byte[]> _ssCommandHandler;
+    private readonly Action<int, byte[]> _ssCommandHandler; // Handler für /ss1 ... /ssN Commands
 
+    // Unmanaged Delegates, gebunden an Funktionen im Spiel-Client
+    // Diese werden über Signatures (Pattern-Scanning) aufgelöst und als Hook-Targets genutzt.
     #region signatures
-    #pragma warning disable CS0649
-    // I do not know what kind of black magic this function performs
+#pragma warning disable CS0649
+    // Verarbeitungsschritt 2 für Strings (inkl. Pronouns & Auto-Translate)
     // Client::UI::Misc::PronounModule::???
     [Signature("E8 ?? ?? ?? ?? 44 88 74 24 ?? 4C 8D 45")]
     private readonly delegate* unmanaged<PronounModule*, Utf8String*, byte, Utf8String*> _processStringStep2;
 
+    // Ausführen eines Chat-Befehls
     // Component::Shell::ShellCommandModule::ExecuteCommandInner
     private delegate void SendMessageDelegate(ShellCommandModule* module, Utf8String* message, UIModule* uiModule);
-    [Signature(
-        "E8 ?? ?? ?? ?? FE 87 ?? ?? ?? ?? C7 87",
-        DetourName = nameof(SendMessageDetour)
-    )]
+    [Signature("E8 ?? ?? ?? ?? FE 87 ?? ?? ?? ?? C7 87", DetourName = nameof(SendMessageDetour))]
     private Hook<SendMessageDelegate>? SendMessageHook { get; init; }
 
+    // Setzen des Chat-Channels
     // Client::UI::Shell::RaptureShellModule::SetChatChannel
     private delegate void SetChatChannelDelegate(RaptureShellModule* module, uint channel);
-    [Signature(
-        "E8 ?? ?? ?? ?? 33 C0 EB ?? 85 D2",
-        DetourName = nameof(SetChatChannelDetour)
-    )]
+    [Signature("E8 ?? ?? ?? ?? 33 C0 EB ?? 85 D2", DetourName = nameof(SetChatChannelDetour))]
     private Hook<SetChatChannelDelegate>? SetChatChannelHook { get; init; }
 
+    // Änderung des Channel-Namens (UI)
     // Component::Shell::ShellCommandModule::ChangeChannelName
     private delegate byte* ChangeChannelNameDelegate(AgentChatLog* agent);
-    [Signature(
-        "E8 ?? ?? ?? ?? BA ?? ?? ?? ?? 48 8D 4D B0 48 8B F8 E8 ?? ?? ?? ?? 41 8B D6",
-        DetourName = nameof(ChangeChannelNameDetour)
-    )]
+    [Signature("E8 ?? ?? ?? ?? BA ?? ?? ?? ?? 48 8D 4D B0 48 8B F8 E8 ?? ?? ?? ?? 41 8B D6", DetourName = nameof(ChangeChannelNameDetour))]
     private Hook<ChangeChannelNameDelegate>? ChangeChannelNameHook { get; init; }
 
+    // Steuerung, ob Channel-Name Lookup ausgeführt werden soll
     // Client::UI::Agent::AgentChatLog::???
     private delegate byte ShouldDoNameLookupDelegate(AgentChatLog* agent);
-    [Signature(
-        "48 89 5C 24 ?? 57 48 83 EC ?? 48 8B D9 40 32 FF 48 8B 49 ?? ?? ?? ?? FF 50",
-        DetourName = nameof(ShouldDoNameLookupDetour)
-    )]
+    [Signature("48 89 5C 24 ?? 57 48 83 EC ?? 48 8B D9 40 32 FF 48 8B 49 ?? ?? ?? ?? FF 50", DetourName = nameof(ShouldDoNameLookupDetour))]
     private Hook<ShouldDoNameLookupDelegate>? ShouldDoNameLookupHook { get; init; }
 
-    // Temporary chat channel change (via hotkey)
+    // Temporäre Channeländerung (Hotkey)
     // Client::UI::Shell::RaptureShellModule::???
     private delegate ulong TempChatChannelDelegate(RaptureShellModule* module, uint x, uint y, ulong z);
-    [Signature(
-        "48 89 5C 24 ?? 48 89 6C 24 ?? 48 89 74 24 ?? 57 48 83 EC ?? 83 B9 ?? ?? ?? ?? ?? 49 8B F9 41 8B F0",
-        DetourName = nameof(TempChatChannelDetour)
-    )]
+    [Signature("48 89 5C 24 ?? 48 89 6C 24 ?? 48 89 74 24 ?? 57 48 83 EC ?? 83 B9 ?? ?? ?? ?? ?? 49 8B F9 41 8B F0", DetourName = nameof(TempChatChannelDetour))]
     private Hook<TempChatChannelDelegate>? TempChatChannelHook { get; init; }
 
-    // Temporary tell target change (via hotkey)
+    // Temporäres Tell-Target setzen (Hotkey)
     // Client::UI::Shell::RaptureShellModule::SetContextTellTargetInForay
     private delegate ulong TempTellTargetDelegate(RaptureShellModule* module, ulong a, ulong b, ulong c, ushort d, ulong e, ulong f, ushort g);
-    [Signature(
-        "48 89 5C 24 ?? 48 89 6C 24 ?? 48 89 74 24 ?? 57 48 83 EC ?? 83 B9 ?? ?? ?? ?? ?? 41 0F B7 F9",
-        DetourName = nameof(TempTellTargetDetour)
-    )]
+    [Signature("48 89 5C 24 ?? 48 89 6C 24 ?? 48 89 74 24 ?? 57 48 83 EC ?? 83 B9 ?? ?? ?? ?? ?? 41 0F B7 F9", DetourName = nameof(TempTellTargetDetour))]
     private Hook<TempTellTargetDelegate>? TempTellTargetHook { get; init; }
 
-    // Called every frame while the chat bar is not focused
+    // Wird jedes Frame aufgerufen, wenn Chatbar nicht fokussiert ist
     private delegate void UnfocusTickDelegate(RaptureShellModule* module);
-    [Signature(
-        "40 53 48 83 EC ?? 83 B9 ?? ?? ?? ?? ?? 48 8B D9 0F 84 ?? ?? ?? ?? 48 8D 91",
-        DetourName = nameof(UnfocusTickDetour)
-    )]
+    [Signature("40 53 48 83 EC ?? 83 B9 ?? ?? ?? ?? ?? 48 8B D9 0F 84 ?? ?? ?? ?? 48 8D 91", DetourName = nameof(UnfocusTickDetour))]
     private Hook<UnfocusTickDelegate>? UnfocusTickHook { get; init; }
-    #pragma warning restore CS0649
+#pragma warning restore CS0649
     #endregion
 
+    // Aktueller Chat-Channel Override (null = kein Override aktiv)
     private ChatChannelOverride? _chatChannelOverride;
     private ChatChannelOverride? _chatChannelOverrideTempBuffer;
     private bool _shouldForceNameLookup = false;
 
+    // Zeitlimit für /r Reply-Erkennung
     private DateTime _nextMessageIsReply = DateTime.UnixEpoch;
 
+    // Getter/Setter für den Chat-Channel Override
     public ChatChannelOverride? ChatChannelOverride
     {
         get => _chatChannelOverride;
@@ -111,8 +109,10 @@ public unsafe sealed class GameChatHooks : IDisposable
         }
     }
 
+    // Temporäres Zwischenspeichern des Chat-Channel Overrides
     private void StashChatChannel()
     {
+        // Wenn ein temporärer Channel gesetzt wird, den aktuellen Override sichern und deaktivieren
         if (_chatChannelOverride != null)
         {
             _logger.LogTrace("Stashing chat channel");
@@ -121,8 +121,10 @@ public unsafe sealed class GameChatHooks : IDisposable
         }
     }
 
+    // Wiederherstellen des Chat-Channel Overrides aus dem Zwischenspeicher
     private void UnstashChatChannel()
     {
+        // Wenn ein temporärer Channel deaktiviert wird, den gesicherten Override wiederherstellen
         if (_chatChannelOverrideTempBuffer != null)
         {
             _logger.LogTrace("Unstashing chat channel");
@@ -131,14 +133,18 @@ public unsafe sealed class GameChatHooks : IDisposable
         }
     }
 
+    // Konstruktor - Initialisiert die Hooks und aktiviert sie
     public GameChatHooks(ILogger<GameChatHooks> logger, IGameInteropProvider gameInteropProvider, Action<int, byte[]> ssCommandHandler)
     {
+        // Speichere die Abhängigkeiten
         _logger = logger;
         _ssCommandHandler = ssCommandHandler;
 
+        // Initialisiere Hooks via Attribute
         logger.LogInformation("Initializing GameChatHooks");
         gameInteropProvider.InitializeFromAttributes(this);
 
+        // Aktiviere alle Hooks
         SendMessageHook?.Enable();
         SetChatChannelHook?.Enable();
         ChangeChannelNameHook?.Enable();
@@ -148,6 +154,7 @@ public unsafe sealed class GameChatHooks : IDisposable
         UnfocusTickHook?.Enable();
     }
 
+    // Dispose - Deaktiviert und entfernt alle Hooks
     public void Dispose()
     {
         SendMessageHook?.Dispose();
@@ -159,11 +166,17 @@ public unsafe sealed class GameChatHooks : IDisposable
         UnfocusTickHook?.Dispose();
     }
 
+    // Verarbeitet eine Chat-Nachricht (Pronouns, Auto-Translate, etc.) und gibt die resultierenden Bytes zurück
     private byte[] ProcessChatMessage(Utf8String* message)
     {
+        // Hole das PronounModule für die String-Verarbeitung
         var pronounModule = UIModule.Instance()->GetPronounModule();
+
+        // Chat-Nachricht in zwei Schritten verarbeiten, wie es der Client auch tut
         var chatString1 = pronounModule->ProcessString(message, true);
         var chatString2 = _processStringStep2(pronounModule, chatString1, 1);
+
+        // Lese die resultierenden Bytes aus dem finalen Utf8String
         return MemoryHelper.ReadRaw((nint)chatString2->StringPtr.Value, chatString2->Length);
     }
 
