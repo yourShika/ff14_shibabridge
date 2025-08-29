@@ -180,77 +180,95 @@ public unsafe sealed class GameChatHooks : IDisposable
         return MemoryHelper.ReadRaw((nint)chatString2->StringPtr.Value, chatString2->Length);
     }
 
+    // Detour für das Senden von Nachrichten - erkennt Befehle, verarbeitet /ss und leitet Chat-Nachrichten weiter
     private void SendMessageDetour(ShellCommandModule* thisPtr, Utf8String* message, UIModule* uiModule)
     {
         try
         {
+            // Analysiere die Nachricht, um zu bestimmen, ob es sich um einen Befehl handelt
             var messageLength = message->Length;
             var messageSpan = message->AsSpan();
 
+            // Flags für Befehls- und Reply-Erkennung
             bool isCommand = false;
             bool isReply = false;
 
+            // Aktuelle Zeit für Reply-Zeitlimit
             var utcNow = DateTime.UtcNow;
 
-            // Check if chat input begins with a command (or auto-translated command)
-            // Or if we think we're being called to send text via the /r command
+            // Prüfe auf /r Reply (zeitbasiert) oder führende / (Befehl)
             if (_nextMessageIsReply >= utcNow)
             {
                 isCommand = true;
             }
+            // Leere Nachricht, oder beginnt mit /, oder enthält nur Leerzeichen
             else if (messageLength == 0 || messageSpan[0] == (byte)'/' || !messageSpan.ContainsAnyExcept((byte)' '))
             {
                 isCommand = true;
+
+                // Prüfe auf /r oder /reply
                 if (messageSpan.StartsWith(System.Text.Encoding.ASCII.GetBytes("/r ")) || messageSpan.StartsWith(System.Text.Encoding.ASCII.GetBytes("/reply ")))
                     isReply = true;
             }
-            else if (messageSpan[0] == (byte)0x02) /* Payload.START_BYTE */
+            // Prüfe auf Auto-Translate Payload (Payload.START_BYTE = 0x02)
+            else if (messageSpan[0] == (byte)0x02) 
             {
+                // Versuche, die Payload zu dekodieren und prüfe, ob es sich um Auto-Translate handelt
                 var payload = Payload.Decode(new BinaryReader(new UnmanagedMemoryStream(message->StringPtr, message->BufSize))) as AutoTranslatePayload;
 
-                // Auto-translate text begins with /
+                // Wenn es eine Auto-Translate Payload ist, prüfe auf führende /
                 if (payload != null && payload.Text.Length > 2 && payload.Text[2] == '/')
                 {
                     isCommand = true;
+
+                    // Prüfe auf /r oder /reply nach dem Payload-Präfix
                     if (payload.Text[2..].StartsWith("/r ", StringComparison.Ordinal) || payload.Text[2..].StartsWith("/reply ", StringComparison.Ordinal))
                         isReply = true;
                 }
             }
 
-            // When using /r the game will set a flag and then call this function a second time
-            // The next call to this function will be raw text intended for the IM recipient
-            // This flag's validity is time-limited as a fail-safe
+            // Setze das Reply-Zeitlimit, wenn es sich um eine Reply handelt
+            // Dies erlaubt es, unmittelbar nach einem /r eine weitere Nachricht als Reply zu senden
             if (isReply)
                 _nextMessageIsReply = utcNow + TimeSpan.FromMilliseconds(100);
 
-            // If it is a command, check if it begins with /ss first so we can handle the message directly
-            // Letting Dalamud handle the commands causes all of the special payloads to be dropped
+            // Prüfe auf /ssN Commands (nur wenn es ein Befehl ist)
+            // Diese werden immer an den Command Handler weitergeleitet und nicht normal verarbeitet
             if (isCommand && messageSpan.StartsWith(System.Text.Encoding.ASCII.GetBytes("/ss")))
             {
+                // Prüfe auf /ss1 bis /ssN
                 for (int i = 1; i <= ChatService.CommandMaxNumber; ++i)
                 {
+                    // Baue den zu prüfenden Command-String
                     var cmdString = $"/ss{i} ";
+
+                    // Prüfe, ob die Nachricht mit diesem Command-String beginnt
                     if (messageSpan.StartsWith(System.Text.Encoding.ASCII.GetBytes(cmdString)))
                     {
+                        // Verarbeite die Chat-Nachricht, um die Bytes zu erhalten
                         var ssChatBytes = ProcessChatMessage(message);
                         ssChatBytes = ssChatBytes.Skip(cmdString.Length).ToArray();
+
+                        // Rufe den Command Handler mit der Shell-Nummer und den Chat-Bytes auf
                         _ssCommandHandler?.Invoke(i, ssChatBytes);
                         return;
                     }
                 }
             }
 
-            // If not a command, or no override is set, then call the original chat handler
+            // Wenn es kein Befehl ist oder kein Chat-Channel Override aktiv ist, die Nachricht normal senden
             if (isCommand || _chatChannelOverride == null)
             {
+                // Setze das Reply-Zeitlimit zurück, wenn es kein Reply war
                 SendMessageHook!.OriginalDisposeSafe(thisPtr, message, uiModule);
                 return;
             }
 
-            // Otherwise, the text is to be sent to the emulated chat channel handler
-            // The chat input string is rendered in to a payload for display first
+            // Verarbeite die Chat-Nachricht, um die Bytes zu erhalten
+            // Diese werden an den Chat-Channel Handler weitergeleitet
             var chatBytes = ProcessChatMessage(message);
 
+            // Rufe den Chat-Channel Handler mit den Chat-Bytes auf
             if (chatBytes.Length > 0)
                 _chatChannelOverride.ChatMessageHandler?.Invoke(chatBytes);
         }
@@ -260,12 +278,15 @@ public unsafe sealed class GameChatHooks : IDisposable
         }
     }
 
+    // Detour für das Setzen des Chat-Channels - entfernt den Override, wenn der Channel geändert wird
     private void SetChatChannelDetour(RaptureShellModule* module, uint channel)
     {
         try
         {
+            // Wenn der Chat-Channel geändert wird, den Override entfernen
             if (_chatChannelOverride != null)
             {
+                // Logger nur auf Trace-Level, da dies häufig passiert
                 _chatChannelOverride = null;
                 _shouldForceNameLookup = true;
             }
@@ -275,37 +296,48 @@ public unsafe sealed class GameChatHooks : IDisposable
             _logger.LogError(e, "Exception thrown during SetChatChannelDetour");
         }
 
+        // Rufe die Originalfunktion auf, um den Channel tatsächlich zu ändern
         SetChatChannelHook!.OriginalDisposeSafe(module, channel);
     }
 
+    // Detour für temporäre Channeländerung (Hotkey) - sichert und entfernt den Override
     private ulong TempChatChannelDetour(RaptureShellModule* module, uint x, uint y, ulong z)
     {
+        // Rufe die Originalfunktion auf, um den temporären Channel zu setzen
         var result = TempChatChannelHook!.OriginalDisposeSafe(module, x, y, z);
 
+        // Wenn ein temporärer Channel gesetzt wurde, den aktuellen Override sichern und deaktivieren
         if (result != 0)
             StashChatChannel();
 
         return result;
     }
 
+    // Detour für temporäres Tell-Target setzen (Hotkey) - sichert und entfernt den Override
     private ulong TempTellTargetDetour(RaptureShellModule* module, ulong a, ulong b, ulong c, ushort d, ulong e, ulong f, ushort g)
     {
+        // Rufe die Originalfunktion auf, um das temporäre Tell-Target zu setzen
         var result = TempTellTargetHook!.OriginalDisposeSafe(module, a, b, c, d, e, f, g);
 
+        // Wenn ein temporäres Tell-Target gesetzt wurde, den aktuellen Override sichern und deaktivieren
         if (result != 0)
             StashChatChannel();
 
         return result;
     }
 
+    // Detour, die jedes Frame aufgerufen wird, wenn die Chatbar nicht fokussiert ist
     private void UnfocusTickDetour(RaptureShellModule* module)
     {
+        // Rufe die Originalfunktion auf
         UnfocusTickHook!.OriginalDisposeSafe(module);
         UnstashChatChannel();
     }
 
+    // Detour für das Ändern des Channel-Namens - ersetzt den Namen, wenn ein Override aktiv ist
     private byte* ChangeChannelNameDetour(AgentChatLog* agent)
     {
+        // Rufe die Originalfunktion auf, um den Channel-Namen zu ändern
         var originalResult = ChangeChannelNameHook!.OriginalDisposeSafe(agent);
 
         try
@@ -313,6 +345,7 @@ public unsafe sealed class GameChatHooks : IDisposable
             // Replace the chat channel name on the UI if active
             if (_chatChannelOverride != null)
             {
+                // Logger nur auf Trace-Level, da dies häufig passiert
                 agent->ChannelLabel.SetString(_chatChannelOverride.ChannelName);
             }
         }
@@ -324,13 +357,15 @@ public unsafe sealed class GameChatHooks : IDisposable
         return originalResult;
     }
 
+    // Detour für die Steuerung, ob ein Channel-Name Lookup ausgeführt werden soll
     private byte ShouldDoNameLookupDetour(AgentChatLog* agent)
     {
+        // Rufe die Originalfunktion auf, um zu bestimmen, ob ein Name Lookup durchgeführt werden soll
         var originalResult = ShouldDoNameLookupHook!.OriginalDisposeSafe(agent);
 
         try
         {
-            // Force the chat channel name to update when required
+            // Erzwinge ein Name Lookup, wenn der Chat-Channel Override geändert wurde
             if (_shouldForceNameLookup)
             {
                 _shouldForceNameLookup = false;
