@@ -17,7 +17,7 @@
 <p>The plugin bridges character appearance data through a lightweight ShibaBridge API. It leverages external Dalamud plugins like Penumbra and Glamourer to map incoming references to local presets. The production server that powers the API remains private to discourage large scale cloning, but the shared contract is available in the <code>ShibaBridgeAPI</code> project.</p>
 
 <h2 id="status">Project Status</h2>
-<p>This project is not a competition with Snowcloack Sync or Lightless Sync to build the best Mare clone. It primarily serves as a learning exercise for understanding Dalamud for future projects. Whether the server component will be released is still undecided, but the plugin will be kept up to date with new Dalamud versions and receive ongoing quality-of-life improvements.</p>
+<p>This project is not a competition with Snowcloack Sync or Lightless Sync or any other Mare-Clone to build the best Mare clone. It primarily serves as a learning exercise for understanding Dalamud for future projects. Whether the server component will be released is still undecided, but the plugin will be kept up to date with new Dalamud versions and receive ongoing quality-of-life improvements.</p>
 
 <h2 id="features">Features</h2>
 <ul>
