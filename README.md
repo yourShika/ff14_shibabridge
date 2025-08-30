@@ -1,241 +1,57 @@
-<!-- ShibaBridge README (reines HTML, ohne CSS) -->
+<!-- Project README in pure HTML -->
 
-<h1 id="shibridge">ShibaBridge</h1>
-<p>Synchronisierte Looks &amp; Emotes für <strong>Final Fantasy XIV</strong> via <strong>Dalamud</strong> – datenschutzfreundlich, opt-in und gruppenbasiert.</p>
+<h1 id="shibabridge">ShibaBridge</h1>
+<p>ShibaBridge synchronizes glamour, Penumbra/Glamourer presets, and optional emotes between Final Fantasy XIV players using the Dalamud plugin framework.</p>
 
-<blockquote>
-  <p><strong>Kurzfassung:</strong> ShibaBridge teilt auf Wunsch dein aktuelles Outfit (Glamour), deine lokalen Penumbra/Glamourer-Presets und – optional – Emotes/Animationen mit freigegebenen Kontakten. Es werden <strong>keine Mod-Dateien verteilt</strong>, nur die nötigen Referenzen/Metadaten.</p>
-</blockquote>
-
-<hr />
-
-<h2 id="inhalt">Inhaltsverzeichnis</h2>
+<h2 id="toc">Quick Links</h2>
 <ul>
+  <li><a href="#overview">Overview</a></li>
+  <li><a href="#status">Project Status</a></li>
   <li><a href="#features">Features</a></li>
-  <li><a href="#how">So funktioniert’s</a></li>
-  <li><a href="#install">Installation</a></li>
-  <li><a href="#start">Erste Schritte</a></li>
-  <li><a href="#privacy">Datenschutz &amp; Sicherheit</a></li>
-  <li><a href="#faq">FAQ</a></li>
   <li><a href="#roadmap">Roadmap</a></li>
-  <li><a href="#contrib">Beitragende</a></li>
-  <li><a href="#disclaimer">Haftung &amp; Hinweise</a></li>
-  <li><a href="#license">Lizenz</a></li>
+  <li><a href="#api">API</a></li>
+  <li><a href="#build">Build</a></li>
+  <li><a href="#license">License</a></li>
 </ul>
 
-<hr />
+<h2 id="overview">Overview</h2>
+<p>The plugin bridges character appearance data through a lightweight ShibaBridge API. It leverages external Dalamud plugins like Penumbra and Glamourer to map incoming references to local presets. The production server that powers the API remains private to discourage large scale cloning, but the shared contract is available in the <code>ShibaBridgeAPI</code> project.</p>
+
+<h2 id="status">Project Status</h2>
+<p>This project is not a competition with Snowcloack Sync or Lightless Sync to build the best Mare clone. It primarily serves as a learning exercise for understanding Dalamud for future projects. Whether the server component will be released is still undecided, but the plugin will be kept up to date with new Dalamud versions and receive ongoing quality-of-life improvements.</p>
 
 <h2 id="features">Features</h2>
 <ul>
-  <li><strong>Aussehen-Sync:</strong> Outfit, Farbstoffe, Accessoires und Charakter-Optik werden für freigegebene Kontakte sichtbar.</li>
-  <li><strong>Penumbra/Glamourer-Brücke:</strong> Mapping auf lokale Presets/Mods – ohne Original-Assets zu übertragen.</li>
-  <li><strong>Emote/Animation-Sync (optional):</strong> Für Screenshots, Events und Roleplay.</li>
-  <li><strong>Gruppen &amp; Schlüssel:</strong> Opt-in-Freigaben, Sichtbarkeiten (Freunde/Party/FC), Widerruf jederzeit.</li>
-  <li><strong>Ressourcenschonend:</strong> Asynchron, Deduplizierung, lokales Caching.</li>
-  <li><strong>Privacy-Werkzeuge:</strong> Panic-Toggle, Blacklist, Offline-Status, Auto-Timeouts.</li>
+  <li>Synchronize outfits, dyes, accessories, and character appearance.</li>
+  <li>Optional emote and animation synchronization.</li>
+  <li>Opt-in sharing with group keys and built-in privacy controls.</li>
 </ul>
-
-<p><strong>Was ShibaBridge NICHT tut</strong></p>
-<ul>
-  <li>verteilt <strong>keine</strong> Mod-Dateien</li>
-  <li>verändert <strong>keine</strong> Spiel-Assets</li>
-  <li>greift <strong>nicht</strong> ohne Zustimmung auf Daten zu</li>
-</ul>
-
-<hr />
-
-<h2 id="how">So funktioniert’s</h2>
-<pre><code>[Dein Client]
-  ├─ Erfasst: aktueller Look + (optional) Emote-Status
-  ├─ Erstellt: schlanke Metadaten + Mapping auf deine lokalen Presets
-  └─ Sendet: nur an Kontakte/Groups mit gültigem Schlüssel
-
-[Empfänger-Client]
-  ├─ Prüft: Freigabe &amp; Sichtbarkeit
-  └─ Rekonstruiert Ansicht mit eigenen lokalen Mods/Presets
-</code></pre>
-
-<ul>
-  <li><strong>Minimaldaten:</strong> Nur Namen/IDs von Presets, Slots, Farbcodes, Flags (z. B. „Emote aktiv“).</li>
-  <li><strong>Kein Asset-Transfer:</strong> Empfänger benötigt kompatible lokale Mods/Presets, sonst Fallbacks.</li>
-  <li><strong>Kontrolliert:</strong> Jederzeit pausierbar oder pro Kontakt einschränkbar.</li>
-</ul>
-
-<hr />
-
-<h2 id="install">Installation</h2>
-<p><em>Voraussetzung: <strong>XIVLauncher</strong> &amp; <strong>Dalamud</strong>, sowie <strong>Penumbra</strong> und <strong>Glamourer</strong>.</em></p>
-
-<ol>
-  <li>
-    <p><strong>ShibaBridge-Repo in Dalamud hinzufügen</strong><br />
-    Dalamud → <em>Settings</em> → <em>Experimental → Custom Plugin Repositories</em>:</p>
-    <pre><code>https://raw.githubusercontent.com/USER/REPO/branch/repo.json
-</code></pre>
-  </li>
-  <li>
-    <p><strong>Plugin installieren</strong><br />
-    <code>/xlplugins</code> öffnen → nach <strong>ShibaBridge</strong> suchen → <strong>Install</strong>.</p>
-  </li>
-  <li>
-    <p><strong>Laden &amp; öffnen</strong><br />
-    Client neu starten oder Dalamud reloaden, dann Config via:</p>
-    <pre><code>/shiba
-</code></pre>
-  </li>
-</ol>
-
-<p><strong>Releases:</strong> <a href="https://github.com/USER/REPO/releases">Zum Download</a><br />
-<strong>Quellcode:</strong> <a href="https://github.com/USER/REPO">GitHub Repository</a></p>
-
-<h3 id="repojson">Beispiel <code>repo.json</code> (Dalamud-Feed)</h3>
-<pre><code>{
-  "Author": "ShibaBridge Team",
-  "Name": "ShibaBridge",
-  "Punchline": "Synchronisierte Looks &amp; Emotes für FFXIV",
-  "Description": "Opt-in Sync von Glamour/Presets (Penumbra/Glamourer) &amp; optionalen Emotes zwischen freigegebenen Kontakten.",
-  "RepoUrl": "https://github.com/USER/REPO",
-  "ApplicableVersion": "any",
-  "Tags": [ "ffxiv", "dalamud", "glamour", "penumbra", "sync" ],
-  "DalamudApiLevel": 10,
-  "AssemblyVersion": "0.1.0",
-  "Changelog": "Erstveröffentlichung",
-  "DownloadLinkInstall": "https://github.com/USER/REPO/releases/download/v0.1.0/ShibaBridge.zip",
-  "DownloadLinkTesting": "",
-  "DownloadLinkUpdate": "https://github.com/USER/REPO/releases/download/v0.1.0/ShibaBridge.zip",
-  "IconUrl": "https://raw.githubusercontent.com/USER/REPO/branch/ShibaBridge/shibridge_icon_512.png",
-  "ImageUrls": [ "https://raw.githubusercontent.com/USER/REPO/branch/assets/screen1.png" ]
-}
-</code></pre>
-
-<hr />
-
-<h2 id="start">Erste Schritte</h2>
-<ol>
-  <li><strong>Gruppe erstellen</strong> und <strong>Schlüssel</strong> generieren/teilen.</li>
-  <li><strong>Rechte setzen:</strong>
-    <ul>
-      <li>Outfit-Sync an/aus</li>
-      <li>Emote-Sync an/aus</li>
-      <li>Sichtbarkeit: Freunde | Party | FC | Benutzerdefiniert</li>
-    </ul>
-  </li>
-  <li><strong>Testen:</strong> Outfit wechseln oder Emote ausführen → freigegebene Kontakte sehen die Änderung live.</li>
-</ol>
-
-<p><strong>Tipps</strong></p>
-<ul>
-  <li>Profile pro Job/Rolle verwenden.</li>
-  <li>Fallback-Regeln aktivieren, falls beim Empfänger Presets fehlen.</li>
-  <li>Blacklist für Namen/IDs pflegen, die nie geteilt werden.</li>
-</ul>
-
-<hr />
-
-<h2 id="privacy">Datenschutz &amp; Sicherheit</h2>
-<ul>
-  <li><strong>Opt-in:</strong> Nichts wird ohne ausdrückliche Freigabe geteilt.</li>
-  <li><strong>Granular:</strong> Per-Kontakt/Gruppe aktivierbar, jederzeit widerrufbar.</li>
-  <li><strong>Minimalprinzip:</strong> Nur erforderliche Referenzen/Parameter.</li>
-  <li><strong>Transparenz:</strong> Lokales Live-Log &amp; optionale Diagnoseansicht.</li>
-  <li><strong>Panik-Taste:</strong> Sofortiger Stopp aller Übertragungen.</li>
-  <li><strong>Zeitlimits:</strong> Session-Timeouts &amp; Auto-Pause bei Inaktivität.</li>
-</ul>
-
-<hr />
-
-<h2 id="faq">FAQ</h2>
-
-<details>
-  <summary>Verteilt ShibaBridge Mod-Dateien?</summary>
-  <p>Nein. Es werden nur Metadaten/Referenzen übertragen. Empfänger benötigen eigene lokale Mods/Presets.</p>
-</details>
-
-<details>
-  <summary>Brauche ich Penumbra &amp; Glamourer?</summary>
-  <p>Für die Outfit/Optik-Funktionen ja. ShibaBridge mappt auf deine lokalen Presets.</p>
-</details>
-
-<details>
-  <summary>Kann ich Emotes synchronisieren?</summary>
-  <p>Ja, wenn du es explizit aktivierst und deine Gruppe zustimmt. Jederzeit deaktivierbar.</p>
-</details>
-
-<details>
-  <summary>Was passiert, wenn ein Preset beim Empfänger fehlt?</summary>
-  <p>Es greift eine Fallback-Logik (Standard-Look / ähnliche Items), sodass die Szene konsistent bleibt.</p>
-</details>
-
-<details>
-  <summary>Beeinflusst das meine FPS?</summary>
-  <p>Der Sync ist asynchron und gecached. In der Praxis sind die Auswirkungen gering; bei Bedarf kannst du Limits setzen.</p>
-</details>
-
-<hr />
 
 <h2 id="roadmap">Roadmap</h2>
 <ul>
-  <li><strong>Geplant</strong>
-    <ul>
-      <li>Auto-Freigabe für Party-Mitglieder</li>
-      <li>Per-Slot-Sync (nur Kopf/Weapon/etc.)</li>
-      <li>Job-basierte Sync-Profile</li>
-    </ul>
-  </li>
-  <li><strong>In Arbeit</strong>
-    <ul>
-      <li>Bessere Konfliktlösung bei fehlenden Presets</li>
-      <li>Robustere Emote-Synchronität bei hoher Latenz</li>
-    </ul>
-  </li>
-  <li><strong>Erledigt</strong>
-    <ul>
-      <li>Gruppen &amp; Schlüsselverwaltung</li>
-      <li>Opt-in-Freigaben</li>
-      <li>Basis-Aussehen-Sync</li>
-    </ul>
-  </li>
+  <li>Improved compression and performance.</li>
+  <li>High-performance server for API communication so large communities do not require powerful hardware.</li>
+  <li>Cross-server communication and synchronization, enabling multiple servers to run in parallel.</li>
+  <li>Dashboard for server management with start/stop controls, admin notifications, and more.</li>
+  <li>Customizable uploads such as color changes.</li>
+  <li>Name colors for different roles (admin, moderator, etc.).</li>
+  <li>Additional enhancements as inspiration strikes.</li>
 </ul>
 
-<hr />
+<h2 id="api">API</h2>
+<p>Client and server communicate via REST and SignalR routes defined in <code>ShibaBridgeAPI</code>. The repository exposes data transfer objects and route constants, while the actual server implementation is intentionally not distributed.</p>
+<p><strong>Note:</strong> The backend server that communicates with the API and plugin will not be released publicly. This private deployment helps prevent wide-scale copying and rehosting of the plugin.</p>
 
-<h2 id="contrib">Beitragende</h2>
-<p>Beiträge sind willkommen!</p>
-<ul>
-  <li>Issue eröffnen: <a href="https://github.com/USER/REPO/issues">Issues</a></li>
-  <li>PR einreichen (mit kurzen Notizen im PR-Text)</li>
-  <li>Features/Use-Cases im Bereich <em>Discussions</em> diskutieren</li>
-</ul>
+<h2 id="build">Building the Plugin</h2>
+<ol>
+  <li>Install the .NET SDK (version 9.0 or later) and a local Dalamud setup.</li>
+  <li>Clone this repository.</li>
+  <li>Execute <code>dotnet build ShibaBridge.sln</code> to build the plugin.</li>
+</ol>
 
-<p><strong>Dev-Setup (Kurz)</strong></p>
-<pre><code># Repo klonen
-git clone https://github.com/USER/REPO.git
-cd REPO
+<h2 id="license">License</h2>
+<p>This project is licensed under the <a href="./LICENSE">MIT License</a>.</p>
 
-# Abhängigkeiten (abhängig von eurer Build-Chain)
-# dotnet workload install ...
-# oder:
-# ./build.ps1
-</code></pre>
+<h2 id="contributing">Contributing</h2>
+<p>Issues and pull requests are welcome. Please open an issue to discuss new ideas or improvements.</p>
 
-<hr />
-
-<h2 id="disclaimer">Haftung &amp; Hinweise</h2>
-<p>ShibaBridge ist ein <strong>inoffizielles</strong> Drittanbieter-Plugin. Die Nutzung kann gegen Richtlinien des Spielbetreibers verstoßen und erfolgt <strong>auf eigenes Risiko</strong>. Prüfe die für deine Region geltenden Regeln und handle verantwortungsvoll. Dieses Projekt steht in <strong>keiner Verbindung zu SQUARE ENIX</strong>.</p>
-
-<hr />
-
-<h2 id="license">Lizenz</h2>
-<p>Dieses Projekt steht unter der <strong>MIT-Lizenz</strong> (oder wähle eine passende Lizenz). Siehe <a href="./LICENSE"><code>LICENSE</code></a>.</p>
-
-<hr />
-
-<p><strong>Links</strong><br />
-<a href="https://github.com/USER/REPO">Repository</a> •
-<a href="https://github.com/USER/REPO/releases">Releases</a></p>
-
-<hr />
-<h2 id="development">Development</h2>
-<p><strong>Build Plugin:</strong> <code>dotnet build ShibaBridge/ShibaBridge.csproj</code></p>
-<p><strong>Run Server:</strong> <code>cd Server/ShibaBridge.Server && dotnet run</code></p>
-<p><strong>Docker:</strong> <code>docker build -t shibabridge-server -f Server/Dockerfile .</code></p>
