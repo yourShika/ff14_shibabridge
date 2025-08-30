@@ -63,13 +63,13 @@ public sealed class IpcCallerGlamourer : DisposableMediatorSubscriberBase, IIpcC
         ) : base(logger, shibabridgeMediator)
     {
         // Initialisiere IPC-Endpunkte
-        _glamourerApiVersions = new ApiVersion(pi);
-        _glamourerGetAllCustomization = new GetStateBase64(pi);
-        _glamourerApplyAll = new ApplyState(pi);
-        _glamourerRevert = new RevertState(pi);
-        _glamourerRevertByName = new RevertStateName(pi);
-        _glamourerUnlock = new UnlockState(pi);
-        _glamourerUnlockByName = new UnlockStateName(pi);
+        _glamourerApiVersions           = new ApiVersion(pi);
+        _glamourerGetAllCustomization   = new GetStateBase64(pi);
+        _glamourerApplyAll              = new ApplyState(pi);
+        _glamourerRevert                = new RevertState(pi);
+        _glamourerRevertByName          = new RevertStateName(pi);
+        _glamourerUnlock                = new UnlockState(pi);
+        _glamourerUnlockByName          = new UnlockStateName(pi);
 
         // Speichere Services
         _logger = logger;

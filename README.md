@@ -13,7 +13,6 @@
   <li><a href="#build">Build</a></li>
   <li><a href="#license">License</a></li>
 </ul>
-
 <h2 id="overview">Overview</h2>
 <p>The plugin bridges character appearance data through a lightweight ShibaBridge API. It leverages external Dalamud plugins like Penumbra and Glamourer to map incoming references to local presets. The production server that powers the API remains private to discourage large scale cloning, but the shared contract is available in the <code>ShibaBridgeAPI</code> project.</p>
 
